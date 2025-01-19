@@ -8,23 +8,30 @@ interface AuthLayoutProps {
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      <div className="p-8 flex flex-col">
+      <div className="p-12 flex flex-col">
         <Logo />
-        <div className="flex-1 flex flex-col justify-center max-w-md">
-          <h1 className="text-4xl font-bold mb-4">Your journey starts here</h1>
-          <p className="text-gray-600 mb-8">
-            Every great business starts with a solid foundation — let's build yours.
-          </p>
-          <div className="relative">
-            <img
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7BhmPDJDAPiZ4gaPBF2wk5sZt47not.png"
+        <div className="flex-1 flex flex-col justify-center">
+          <div className="max-w-[480px]">
+            <h1 className="text-[64px] leading-[1.1] font-bold tracking-tight">
+            Start Your Global Business Journey Today
+            </h1>
+            <p className="text-xl mt-6 text-gray-600">
+            We help international entrepreneurs establish their business presence in the UK and USA.
+            </p>
+          </div>
+          <div className="relative mt-16">
+            <Image
+              src="/side_hero.png"
               alt="Business illustration"
-              className="w-full"
+              width={720}
+              height={480}
+              priority
+              className="w-full max-w-[720px]"
             />
           </div>
         </div>
       </div>
-      <div className="bg-gray-50 p-8 flex items-center justify-center">
+      <div className="bg-gray-50 p-12 flex items-center justify-center">
         <div className="w-full max-w-md space-y-8">
           {children}
         </div>
@@ -32,4 +39,3 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   );
 }
-

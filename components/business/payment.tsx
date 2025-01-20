@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,23 +38,29 @@ export function Payment({ amount, onComplete, onBack }: PaymentProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Payment</h2>
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Payment
+        </h2>
         <p className="text-gray-500 mt-2">Choose your payment method and complete the registration.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card
-          className={`cursor-pointer transition-colors ${
-            method === "card" ? "border-indigo-600 bg-indigo-50" : "hover:border-gray-300"
+          className={`cursor-pointer transition-all relative overflow-hidden group h-full ${
+            method === "card" 
+              ? "ring-2 ring-indigo-600 border-transparent" 
+              : "hover:border-gray-300 hover:shadow-md"
           }`}
           onClick={() => setMethod("card")}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Credit Card
+              <div className={`p-2 rounded-full ${method === "card" ? "bg-indigo-100" : "bg-gray-100"}`}>
+                <CreditCard className={`h-5 w-5 ${method === "card" ? "text-indigo-600" : "text-gray-500"}`} />
+              </div>
+              <span>Credit Card</span>
             </CardTitle>
             <CardDescription>Pay with credit or debit card</CardDescription>
           </CardHeader>
@@ -66,15 +70,19 @@ export function Payment({ amount, onComplete, onBack }: PaymentProps) {
         </Card>
 
         <Card
-          className={`cursor-pointer transition-colors ${
-            method === "bank" ? "border-indigo-600 bg-indigo-50" : "hover:border-gray-300"
+          className={`cursor-pointer transition-all relative overflow-hidden group h-full ${
+            method === "bank" 
+              ? "ring-2 ring-indigo-600 border-transparent" 
+              : "hover:border-gray-300 hover:shadow-md"
           }`}
           onClick={() => setMethod("bank")}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Bank Transfer
+              <div className={`p-2 rounded-full ${method === "bank" ? "bg-indigo-100" : "bg-gray-100"}`}>
+                <Building2 className={`h-5 w-5 ${method === "bank" ? "text-indigo-600" : "text-gray-500"}`} />
+              </div>
+              <span>Bank Transfer</span>
             </CardTitle>
             <CardDescription>Pay via bank transfer</CardDescription>
           </CardHeader>
@@ -85,42 +93,50 @@ export function Payment({ amount, onComplete, onBack }: PaymentProps) {
       </div>
 
       {method === "bank" && (
-        <Card>
+        <Card className="border border-indigo-100">
           <CardHeader>
-            <CardTitle>Upload Payment Receipt</CardTitle>
+            <CardTitle className="text-indigo-600">Upload Payment Receipt</CardTitle>
             <CardDescription>Please upload your bank transfer receipt</CardDescription>
           </CardHeader>
           <CardContent>
-            <Input type="file" accept="image/*,.pdf" onChange={(e) => setReceipt(e.target.files?.[0] || null)} />
+            <Input 
+              type="file" 
+              accept="image/*,.pdf" 
+              onChange={(e) => setReceipt(e.target.files?.[0] || null)}
+              className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
+            />
           </CardContent>
         </Card>
       )}
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Total Amount</span>
-                <span className="font-bold">${amount}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <Card className="border-2 border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <CardHeader>
+          <CardTitle className="text-center text-xl">Payment Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center px-4">
+            <span className="text-gray-600">Total Amount</span>
+            <span className="text-3xl font-bold text-indigo-600">${amount}</span>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={onBack}>
-            Back
-          </Button>
-          <Button onClick={handleSubmit} disabled={!method || (method === "bank" && !receipt) || isSubmitting}>
-            {isSubmitting ? "Processing..." : "Complete Registration"}
-          </Button>
-        </div>
+      <div className="flex justify-center gap-4 pt-4">
+        <Button 
+          variant="outline" 
+          onClick={onBack}
+          className="px-8"
+        >
+          Back
+        </Button>
+        <Button 
+          onClick={handleSubmit} 
+          disabled={!method || (method === "bank" && !receipt) || isSubmitting}
+          className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+        >
+          {isSubmitting ? "Processing..." : "Complete Registration"}
+        </Button>
       </div>
     </div>
   )
 }
-

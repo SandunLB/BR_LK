@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +7,7 @@ const countries = [
   {
     id: "us",
     name: "United States",
+    code: "us",
     price: 599,
     processingTime: "5-7 business days",
     features: ["LLC/Corporation Formation", "EIN Registration", "Registered Agent (1 year)", "Operating Agreement"],
@@ -16,6 +15,7 @@ const countries = [
   {
     id: "uk",
     name: "United Kingdom",
+    code: "gb",
     price: 499,
     processingTime: "3-5 business days",
     features: ["Limited Company Formation", "VAT Registration", "Company Secretary", "Articles of Association"],
@@ -31,8 +31,10 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Select Country of Incorporation</h2>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Select Country of Incorporation
+        </h2>
         <p className="text-gray-500 mt-2">
           Choose where you want to register your business. Each jurisdiction has different requirements and benefits.
         </p>
@@ -42,29 +44,58 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
         {countries.map((country) => (
           <Card
             key={country.id}
-            className={`cursor-pointer transition-colors ${
-              selectedCountry === country.id ? "border-indigo-600 bg-indigo-50" : "hover:border-gray-300"
+            className={`cursor-pointer transition-all relative overflow-hidden group h-full ${
+              selectedCountry === country.id 
+                ? "ring-2 ring-indigo-600 border-transparent" 
+                : "hover:border-gray-300"
             }`}
             onClick={() => setSelectedCountry(country.id)}
             aria-label={`Select ${country.name}`}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{country.name}</span>
-                {selectedCountry === country.id && <Check className="h-5 w-5 text-indigo-600" />}
+            {/* Background Flag */}
+            <div 
+              className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity"
+              style={{
+                backgroundImage: `url(https://flagcdn.com/w640/${country.code.toLowerCase()}.png)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                transform: 'scale(1.2)',
+                filter: 'grayscale(30%)',
+              }}
+            />
+            
+            <CardHeader className="relative pb-4">
+              <CardTitle className="flex items-center min-h-[28px]">
+                <div className="flex items-center gap-2 flex-1">
+                  <img
+                    src={`https://flagcdn.com/24x18/${country.code.toLowerCase()}.png`}
+                    alt={`${country.name} flag`}
+                    className="w-6 h-auto rounded shadow-sm flex-shrink-0"
+                  />
+                  <span className="font-semibold">{country.name}</span>
+                </div>
+                <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                  selectedCountry === country.id ? "bg-indigo-600" : "bg-transparent"
+                }`}>
+                  {selectedCountry === country.id && (
+                    <Check className="h-5 w-5 text-white" />
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               <div className="space-y-4">
                 <div>
-                  <span className="text-2xl font-bold">${country.price}</span>
+                  <span className="text-2xl font-bold text-indigo-600">${country.price}</span>
                   <span className="text-gray-500 ml-2">one-time fee</span>
                 </div>
                 <div className="text-sm text-gray-500">Processing time: {country.processingTime}</div>
                 <ul className="space-y-2">
                   {country.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
+                      <div className="bg-green-100 p-1 rounded-full flex-shrink-0">
+                        <Check className="h-4 w-4 text-green-600" />
+                      </div>
                       <span className="text-sm">{feature}</span>
                     </li>
                   ))}
@@ -75,14 +106,15 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
         ))}
       </div>
 
-      <Button
-        className="w-full md:w-auto"
-        disabled={!selectedCountry}
-        onClick={() => onNext(countries.find((c) => c.id === selectedCountry)!)}
-      >
-        Continue
-      </Button>
+      <div className="flex justify-center">
+        <Button
+          className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          disabled={!selectedCountry}
+          onClick={() => onNext(countries.find((c) => c.id === selectedCountry)!)}
+        >
+          Continue
+        </Button>
+      </div>
     </div>
   )
 }
-

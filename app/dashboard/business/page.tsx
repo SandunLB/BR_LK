@@ -15,7 +15,6 @@ import { Review } from "@/components/business/review"
 import { Payment } from "@/components/business/payment"
 import { Building } from "lucide-react"
 
-// FormData interface (same as before)
 interface FormData {
   country?: {
     name: string
@@ -30,15 +29,12 @@ interface FormData {
     type: string
     industry: string
   }
-  owner?: {
+  owner?: Array<{
+    id: string
     fullName: string
-    ownership: number
+    ownership: string
     isCompany: boolean
-    companyDetails?: {
-      name: string
-      registrationNumber: string
-    }
-  }
+  }>
   address?: {
     street: string
     city: string
@@ -68,7 +64,6 @@ export default function BusinessPage() {
   const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false)
 
   useEffect(() => {
-    // Reset registration step when showing/hiding registration form
     if (showRegistration) {
       setCurrentStep(1)
     }
@@ -99,17 +94,8 @@ export default function BusinessPage() {
           }
           break
         case 4:
-          newData.owner = {
-            fullName: stepData.fullName,
-            ownership: stepData.ownership,
-            isCompany: stepData.isCompany,
-            ...(stepData.isCompany && {
-              companyDetails: {
-                name: stepData.companyDetails?.name,
-                registrationNumber: stepData.companyDetails?.registrationNumber
-              }
-            })
-          }
+          // Handle array of owners
+          newData.owner = stepData
           break
         case 5:
           newData.address = {
@@ -141,6 +127,11 @@ export default function BusinessPage() {
     setCurrentStep(step)
   }
 
+  const handlePaymentComplete = () => {
+    setHasRegisteredBusiness(true)
+    setCurrentStep(8)
+  }
+
   const renderRegistrationStep = () => {
     switch (currentStep) {
       case 1:
@@ -166,16 +157,23 @@ export default function BusinessPage() {
         return (
           <Payment
             amount={(formData.country?.price || 0) + (formData.package?.price || 0)}
-            onComplete={() => setCurrentStep(8)}
+            onComplete={handlePaymentComplete}
             onBack={handleBack}
           />
         )
       case 8:
         return (
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Registration Complete!</h2>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Registration Complete!
+            </h2>
             <p className="text-gray-600 mb-6">Thank you for registering your business with us.</p>
-            <Button onClick={() => router.push("/dashboard/business")}>Go to Business Dashboard</Button>
+            <Button 
+              onClick={() => router.push("/dashboard/business")}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            >
+              Go to Business Dashboard
+            </Button>
           </div>
         )
       default:
@@ -188,7 +186,9 @@ export default function BusinessPage() {
       return (
         <Card>
           <CardHeader>
-            <CardTitle>Register Your Business</CardTitle>
+            <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Register Your Business
+            </CardTitle>
             <CardDescription>Start your business journey by registering your company with us.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -196,7 +196,10 @@ export default function BusinessPage() {
               Registering your business is the first step towards growth and success. Our streamlined process makes it
               easy to get started.
             </p>
-            <Button onClick={() => router.push('/dashboard/business?register=true')}>
+            <Button 
+              onClick={() => router.push('/dashboard/business?register=true')}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            >
               <Building className="mr-2 h-4 w-4" />
               Start Business Registration
             </Button>
@@ -209,11 +212,14 @@ export default function BusinessPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Business Overview</CardTitle>
+            <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Business Overview
+            </CardTitle>
             <CardDescription>Key information about your registered business</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Add business overview content here */}
+            {/* Business overview content will go here */}
+            <div className="text-gray-500">Your business details will appear here after registration.</div>
           </CardContent>
         </Card>
       </div>
@@ -226,7 +232,9 @@ export default function BusinessPage() {
         {showRegistration ? (
           <>
             <div>
-              <h1 className="text-3xl font-bold">Business Registration</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Business Registration
+              </h1>
               <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
             </div>
 
@@ -242,7 +250,9 @@ export default function BusinessPage() {
         ) : (
           <>
             <div>
-              <h1 className="text-3xl font-bold">My Business</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                My Business
+              </h1>
               <p className="text-gray-500 mt-2">Manage and overview your business details.</p>
             </div>
             {renderBusinessDashboard()}

@@ -1,5 +1,3 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -18,15 +16,12 @@ interface ReviewProps {
       type: string
       industry: string
     }
-    owner: {
+    owner: Array<{
+      id: string
       fullName: string
-      ownership: number
+      ownership: string
       isCompany: boolean
-      companyDetails?: {
-        name: string
-        registrationNumber: string
-      }
-    }
+    }>
     address: {
       street: string
       city: string
@@ -49,9 +44,8 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
   if (!data.address) missingFields.push("Address Details")
 
   if (missingFields.length > 0) {
-    console.error("Missing fields:", missingFields)
     return (
-      <div className="text-center">
+      <div className="text-center max-w-xl mx-auto">
         <h2 className="text-2xl font-bold text-red-600 mb-4">Incomplete Data</h2>
         <p className="text-gray-600 mb-6">The following information is missing:</p>
         <ul className="list-disc list-inside mb-4">
@@ -60,7 +54,9 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           ))}
         </ul>
         <p className="text-gray-600 mb-6">Please go back and fill in all required fields.</p>
-        <Button onClick={onBack}>Go Back</Button>
+        <Button onClick={onBack} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+          Go Back
+        </Button>
       </div>
     )
   }
@@ -68,23 +64,34 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
   const totalCost = ((data.country?.price || 0) + (data.package?.price || 0)).toFixed(2)
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold">Total Cost Summary</h3>
-        <p className="text-2xl font-bold">${totalCost}</p>
-        <p className="text-sm text-gray-500">One-time fee</p>
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold">Review Your Information</h2>
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Review Your Information
+        </h2>
         <p className="text-gray-500 mt-2">Please review all the information before proceeding to payment.</p>
       </div>
 
+      <Card className="border-2 border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <CardHeader>
+          <CardTitle className="text-center text-xl">Total Cost Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-4xl font-bold text-indigo-600">${totalCost}</p>
+          <p className="text-sm text-gray-500 mt-1">One-time fee</p>
+        </CardContent>
+      </Card>
+
       <div className="space-y-4">
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Registration Details</span>
-              <Button variant="ghost" className="text-indigo-600" onClick={() => onEdit(1)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => onEdit(1)}
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              >
                 Edit
               </Button>
             </CardTitle>
@@ -93,21 +100,25 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Country</dt>
-                <dd className="mt-1">{data.country.name}</dd>
+                <dd className="mt-1 font-medium">{data.country.name}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Price</dt>
-                <dd className="mt-1">${data.country.price}</dd>
+                <dd className="mt-1 font-medium">${data.country.price}</dd>
               </div>
             </dl>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Package Details</span>
-              <Button variant="ghost" className="text-indigo-600" onClick={() => onEdit(2)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => onEdit(2)}
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              >
                 Edit
               </Button>
             </CardTitle>
@@ -116,21 +127,25 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Package</dt>
-                <dd className="mt-1">{data.package.name}</dd>
+                <dd className="mt-1 font-medium">{data.package.name}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Price</dt>
-                <dd className="mt-1">${data.package.price}</dd>
+                <dd className="mt-1 font-medium">${data.package.price}</dd>
               </div>
             </dl>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Company Details</span>
-              <Button variant="ghost" className="text-indigo-600" onClick={() => onEdit(3)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => onEdit(3)}
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              >
                 Edit
               </Button>
             </CardTitle>
@@ -139,61 +154,69 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Name</dt>
-                <dd className="mt-1">{data.company.name}</dd>
+                <dd className="mt-1 font-medium">{data.company.name}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Type</dt>
-                <dd className="mt-1">{data.company.type}</dd>
+                <dd className="mt-1 font-medium">{data.company.type}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Industry</dt>
-                <dd className="mt-1">{data.company.industry}</dd>
+                <dd className="mt-1 font-medium">{data.company.industry}</dd>
               </div>
             </dl>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Owner Details</span>
-              <Button variant="ghost" className="text-indigo-600" onClick={() => onEdit(4)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => onEdit(4)}
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              >
                 Edit
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {data.owner.isCompany ? (
-                <>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Company Name</dt>
-                    <dd className="mt-1">{data.owner.companyDetails?.name}</dd>
+            <div className="space-y-6">
+              {Array.isArray(data.owner) ? (
+                data.owner.map((owner, index) => (
+                  <div key={owner.id} className="border-b last:border-b-0 pb-4 last:pb-0">
+                    <h4 className="font-medium mb-3">Owner {index + 1}</h4>
+                    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">
+                          {owner.isCompany ? 'Company Name' : 'Full Name'}
+                        </dt>
+                        <dd className="mt-1 font-medium">{owner.fullName}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Ownership</dt>
+                        <dd className="mt-1 font-medium">{owner.ownership}%</dd>
+                      </div>
+                    </dl>
                   </div>
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">Registration Number</dt>
-                    <dd className="mt-1">{data.owner.companyDetails?.registrationNumber}</dd>
-                  </div>
-                </>
+                ))
               ) : (
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Full Name</dt>
-                  <dd className="mt-1">{data.owner.fullName}</dd>
-                </div>
+                <p className="text-gray-500">No owner information available</p>
               )}
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Ownership</dt>
-                <dd className="mt-1">{data.owner.ownership}%</dd>
-              </div>
-            </dl>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Address Details</span>
-              <Button variant="ghost" className="text-indigo-600" onClick={() => onEdit(5)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => onEdit(5)}
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              >
                 Edit
               </Button>
             </CardTitle>
@@ -202,47 +225,46 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
             <dl className="grid grid-cols-1 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Street Address</dt>
-                <dd className="mt-1">{data.address.street}</dd>
+                <dd className="mt-1 font-medium">{data.address.street}</dd>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">City</dt>
-                  <dd className="mt-1">{data.address.city}</dd>
+                  <dd className="mt-1 font-medium">{data.address.city}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">State/Province</dt>
-                  <dd className="mt-1">{data.address.state}</dd>
+                  <dd className="mt-1 font-medium">{data.address.state}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Postal Code</dt>
-                  <dd className="mt-1">{data.address.postalCode}</dd>
+                  <dd className="mt-1 font-medium">{data.address.postalCode}</dd>
                 </div>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Country</dt>
-                <dd className="mt-1">{data.address.country}</dd>
+                <dd className="mt-1 font-medium">{data.address.country}</dd>
               </div>
             </dl>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Cost</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalCost}</div>
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="flex gap-4">
-        <Button variant="outline" onClick={onBack}>
+      <div className="flex justify-center gap-4 pt-4">
+        <Button 
+          variant="outline" 
+          onClick={onBack}
+          className="px-8"
+        >
           Back
         </Button>
-        <Button onClick={onNext}>Proceed to Payment</Button>
+        <Button 
+          onClick={onNext}
+          className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+        >
+          Proceed to Payment
+        </Button>
       </div>
     </div>
   )
 }
-

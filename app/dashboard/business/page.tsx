@@ -1,7 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Stepper } from "@/components/business/stepper"
 import { CountrySelection } from "@/components/business/country-selection"
 import { PackageSelection } from "@/components/business/package-selection"
@@ -10,11 +13,9 @@ import { OwnerInformation } from "@/components/business/owner-information"
 import { AddressDetails } from "@/components/business/address-details"
 import { Review } from "@/components/business/review"
 import { Payment } from "@/components/business/payment"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Building } from "lucide-react"
 
-// FormData interface remains the same
+// FormData interface (same as before)
 interface FormData {
   country?: {
     name: string
@@ -58,10 +59,20 @@ const steps = [
   { id: 8, name: "Complete", description: "Registration complete" },
 ]
 
-export default function BusinessRegistrationPage() {
+export default function BusinessPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const showRegistration = searchParams.get("register") === "true"
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<FormData>({})
+  const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false)
+
+  useEffect(() => {
+    // Reset registration step when showing/hiding registration form
+    if (showRegistration) {
+      setCurrentStep(1)
+    }
+  }, [showRegistration])
 
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
@@ -120,7 +131,7 @@ export default function BusinessRegistrationPage() {
 
   const handleBack = () => {
     if (currentStep === 1) {
-      router.push('/dashboard')
+      router.push('/dashboard/business')
     } else {
       setCurrentStep((prev) => prev - 1)
     }
@@ -130,16 +141,7 @@ export default function BusinessRegistrationPage() {
     setCurrentStep(step)
   }
 
-  const getFirstIncompleteStep = (): number => {
-    if (!formData.country) return 1
-    if (!formData.package) return 2
-    if (!formData.company) return 3
-    if (!formData.owner) return 4
-    if (!formData.address) return 5
-    return 6
-  }
-
-  const renderStep = () => {
+  const renderRegistrationStep = () => {
     switch (currentStep) {
       case 1:
         return <CountrySelection onNext={handleNext} />
@@ -152,12 +154,6 @@ export default function BusinessRegistrationPage() {
       case 5:
         return <AddressDetails onNext={handleNext} onBack={handleBack} />
       case 6:
-        if (!formData.country || !formData.package || !formData.company || 
-            !formData.owner || !formData.address) {
-          const firstIncompleteStep = getFirstIncompleteStep()
-          setCurrentStep(firstIncompleteStep)
-          return null
-        }
         return (
           <Review 
             data={formData as Required<FormData>} 
@@ -179,7 +175,7 @@ export default function BusinessRegistrationPage() {
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">Registration Complete!</h2>
             <p className="text-gray-600 mb-6">Thank you for registering your business with us.</p>
-            <Button onClick={() => router.push("/dashboard")}>Go to Dashboard</Button>
+            <Button onClick={() => router.push("/dashboard/business")}>Go to Business Dashboard</Button>
           </div>
         )
       default:
@@ -187,22 +183,71 @@ export default function BusinessRegistrationPage() {
     }
   }
 
+  const renderBusinessDashboard = () => {
+    if (!hasRegisteredBusiness) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Register Your Business</CardTitle>
+            <CardDescription>Start your business journey by registering your company with us.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">
+              Registering your business is the first step towards growth and success. Our streamlined process makes it
+              easy to get started.
+            </p>
+            <Button onClick={() => router.push('/dashboard/business?register=true')}>
+              <Building className="mr-2 h-4 w-4" />
+              Start Business Registration
+            </Button>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Business Overview</CardTitle>
+            <CardDescription>Key information about your registered business</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Add business overview content here */}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Business Registration</h1>
-          <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <Stepper steps={steps} currentStep={currentStep} />
-            <div className="mt-8">
-              {renderStep()}
+        {showRegistration ? (
+          <>
+            <div>
+              <h1 className="text-3xl font-bold">Business Registration</h1>
+              <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
             </div>
-          </CardContent>
-        </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <Stepper steps={steps} currentStep={currentStep} />
+                <div className="mt-8">
+                  {renderRegistrationStep()}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <div>
+              <h1 className="text-3xl font-bold">My Business</h1>
+              <p className="text-gray-500 mt-2">Manage and overview your business details.</p>
+            </div>
+            {renderBusinessDashboard()}
+          </>
+        )}
       </div>
     </DashboardLayout>
   )

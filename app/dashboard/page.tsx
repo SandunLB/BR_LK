@@ -51,7 +51,9 @@ export default function DashboardPage() {
                 Registering your business is the first step towards growth and success. Our streamlined process makes it
                 easy to get started.
               </p>
-              <Button onClick={() => router.push("/dashboard/business/register")}>Start Business Registration</Button>
+              <Button onClick={() => router.push('/dashboard/business?register=true')}>
+                Start Business Registration
+              </Button>
             </CardContent>
           </Card>
         ) : (

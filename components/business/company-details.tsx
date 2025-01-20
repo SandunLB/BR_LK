@@ -5,17 +5,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const companyTypes = [
   { id: "llc", name: "Limited Liability Company (LLC)" },
-  { id: "corp", name: "Corporation" },
-  { id: "partnership", name: "Partnership" },
+  { id: "l.l.c", name: "Limited Liability Company (L.L.C.)" },
 ]
 
 const industries = [
-  { id: "tech", name: "Technology" },
-  { id: "retail", name: "Retail" },
-  { id: "healthcare", name: "Healthcare" },
-  { id: "finance", name: "Finance" },
-  { id: "other", name: "Other" },
-]
+    // Agriculture, Forestry, Fishing and Hunting
+    { id: "agriculture", name: "Agriculture, Forestry & Fishing" },
+    
+    // Mining and Energy
+    { id: "mining", name: "Mining & Quarrying" },
+    { id: "energy", name: "Energy & Utilities" },
+    
+    // Manufacturing
+    { id: "manufacturing", name: "Manufacturing" },
+    { id: "food_manufacturing", name: "Food & Beverage Manufacturing" },
+    { id: "textile", name: "Textile & Apparel" },
+    
+    // Construction
+    { id: "construction", name: "Construction" },
+    { id: "real_estate", name: "Real Estate & Property" },
+    
+    // Trade
+    { id: "wholesale", name: "Wholesale Trade" },
+    { id: "retail", name: "Retail Trade" },
+    
+    // Transportation and Storage
+    { id: "transportation", name: "Transportation & Logistics" },
+    { id: "warehouse", name: "Warehousing & Storage" },
+    
+    // Services
+    { id: "accommodation", name: "Accommodation & Food Services" },
+    { id: "information", name: "Information & Media" },
+    { id: "telecom", name: "Telecommunications" },
+    { id: "tech", name: "Information Technology" },
+    { id: "software", name: "Software Development" },
+    { id: "finance", name: "Financial Services" },
+    { id: "insurance", name: "Insurance" },
+    { id: "real_estate_services", name: "Real Estate Services" },
+    { id: "professional", name: "Professional Services" },
+    { id: "scientific", name: "Scientific & Technical Services" },
+    { id: "legal", name: "Legal Services" },
+    { id: "consulting", name: "Business Consulting" },
+    { id: "administrative", name: "Administrative Services" },
+    
+    // Healthcare
+    { id: "healthcare", name: "Healthcare & Medical" },
+    { id: "social_assistance", name: "Social Assistance" },
+    
+    // Entertainment and Recreation
+    { id: "arts", name: "Arts & Entertainment" },
+    { id: "recreation", name: "Recreation & Sports" },
+    
+    // Education
+    { id: "education", name: "Education & Training" },
+    
+    // Other Services
+    { id: "repair", name: "Repair & Maintenance" },
+    { id: "personal_services", name: "Personal Services" },
+    { id: "nonprofit", name: "Non-Profit Organization" },
+    { id: "other", name: "Other Services" }
+  ]
 
 interface CompanyDetailsProps {
   onNext: (details: {

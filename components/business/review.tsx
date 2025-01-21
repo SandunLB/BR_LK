@@ -203,11 +203,13 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
                           </div>
                           <div>
                           <dd className="mt-1 font-medium">
-                            {owner.document 
-                              ? owner.document.name.length > 25 
-                                ? owner.document.name.slice(0, 25) + '...' + owner.document.name.split('.').pop()
-                                : owner.document.name 
-                              : 'Not provided'}
+                          {
+                            owner.document && owner.document.name
+                              ? owner.document.name.length > 25
+                                ? owner.document.name.slice(0, 25) + "..." + owner.document.name.split(".").pop()
+                                : owner.document.name
+                              : "Not provided"
+                          }
                           </dd>
                           </div>
                         </>

@@ -65,8 +65,32 @@ export default function BusinessPage() {
   const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false)
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedStep = sessionStorage.getItem("businessRegistrationStep")
+      const savedData = sessionStorage.getItem("businessRegistrationData")
+
+      if (savedStep) {
+        setCurrentStep(Number.parseInt(savedStep, 10))
+      }
+
+      if (savedData) {
+        setFormData(JSON.parse(savedData))
+      }
+
+      if (savedStep || savedData) {
+        router.push("/dashboard/business?register=true")
+      }
+    }
+  }, [router])
+
+  useEffect(() => {
     if (showRegistration) {
-      setCurrentStep(1)
+      setCurrentStep((prevStep) => {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("businessRegistrationStep", prevStep.toString())
+        }
+        return prevStep
+      })
     }
   }, [showRegistration])
 
@@ -117,26 +141,48 @@ export default function BusinessPage() {
           Object.assign(newData, stepData)
       }
 
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData))
+      }
       return newData
     })
-    setCurrentStep((prev) => prev + 1)
+    setCurrentStep((prev) => {
+      const newStep = prev + 1
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("businessRegistrationStep", newStep.toString())
+      }
+      return newStep
+    })
   }
 
   const handleBack = () => {
     if (currentStep === 1) {
       router.push("/dashboard/business")
     } else {
-      setCurrentStep((prev) => prev - 1)
+      setCurrentStep((prev) => {
+        const newStep = prev - 1
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("businessRegistrationStep", newStep.toString())
+        }
+        return newStep
+      })
     }
   }
 
   const handleEdit = (step: number) => {
     setCurrentStep(step)
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("businessRegistrationStep", step.toString())
+    }
   }
 
   const handlePaymentComplete = () => {
     setHasRegisteredBusiness(true)
     setCurrentStep(8)
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("businessRegistrationData")
+      sessionStorage.removeItem("businessRegistrationStep")
+    }
   }
 
   const renderRegistrationStep = () => {

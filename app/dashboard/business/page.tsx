@@ -14,6 +14,7 @@ import { AddressDetails } from "@/components/business/address-details"
 import { Review } from "@/components/business/review"
 import { Payment } from "@/components/business/payment"
 import { Building, Loader2 } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 interface FormData {
   country?: {
@@ -64,6 +65,7 @@ export default function BusinessPage() {
   const [formData, setFormData] = useState<FormData>({})
   const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
 
   useEffect(() => {
     const initializeData = () => {
@@ -80,10 +82,20 @@ export default function BusinessPage() {
         }
 
         const registerParam = searchParams.get("register")
-        setShowRegistration(registerParam === "true" || !!savedStep || !!savedData)
+        const sessionId = searchParams.get("session_id")
 
-        if ((registerParam === "true" || !!savedStep || !!savedData) && !showRegistration) {
-          router.push("/dashboard/business?register=true")
+        if (sessionId) {
+          // Payment was successful, move to the final step
+          setCurrentStep(8)
+          setHasRegisteredBusiness(true)
+          sessionStorage.removeItem("businessRegistrationData")
+          sessionStorage.removeItem("businessRegistrationStep")
+        } else {
+          setShowRegistration(registerParam === "true" || !!savedStep || !!savedData)
+
+          if ((registerParam === "true" || !!savedStep || !!savedData) && !showRegistration) {
+            router.push("/dashboard/business?register=true")
+          }
         }
       }
       setIsLoading(false)
@@ -173,13 +185,15 @@ export default function BusinessPage() {
     }
   }
 
-  const handlePaymentComplete = () => {
+  const handlePaymentComplete = (details: { method: string; receiptUrl?: string; businessId: string }) => {
     setHasRegisteredBusiness(true)
     setCurrentStep(8)
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("businessRegistrationData")
       sessionStorage.removeItem("businessRegistrationStep")
     }
+    // Here you might want to do something with the businessId, like storing it in the user's profile
+    console.log("Business registered with ID:", details.businessId)
   }
 
   const renderRegistrationStep = () => {
@@ -204,7 +218,7 @@ export default function BusinessPage() {
           />
         )
       case 7:
-        return <Payment amount={formData.package?.price || 0} onComplete={handlePaymentComplete} onBack={handleBack} />
+        return <Payment amount={formData.package?.price || 0} businessData={formData} />
       case 8:
         return (
           <div className="text-center">

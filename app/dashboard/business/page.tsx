@@ -32,7 +32,9 @@ interface FormData {
     id: string
     fullName: string
     ownership: string
-    isCompany: boolean
+    isCEO?: boolean
+    birthDate?: string
+    document?: File | null
   }>
   address?: {
     street: string
@@ -92,7 +94,15 @@ export default function BusinessPage() {
           }
           break
         case 4:
-          newData.owner = stepData
+          // Handle owner data with new fields
+          newData.owner = stepData.map((owner: any) => ({
+            id: owner.id,
+            fullName: owner.fullName,
+            ownership: owner.ownership,
+            isCEO: owner.isCEO,
+            birthDate: owner.birthDate,
+            document: owner.document
+          }))
           break
         case 5:
           newData.address = {
@@ -215,8 +225,28 @@ export default function BusinessPage() {
             <CardDescription>Key information about your registered business</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Business overview content will go here */}
-            <div className="text-gray-500">Your business details will appear here after registration.</div>
+            <div className="space-y-4">
+              {formData.company && (
+                <div>
+                  <h3 className="font-medium text-gray-900">{formData.company.name}</h3>
+                  <p className="text-gray-500">Type: {formData.company.type}</p>
+                  <p className="text-gray-500">Industry: {formData.company.industry}</p>
+                </div>
+              )}
+              {formData.owner && formData.owner.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-900">Ownership Structure</h3>
+                  <div className="mt-2 space-y-2">
+                    {formData.owner.map((owner) => (
+                      <p key={owner.id} className="text-gray-500">
+                        {owner.fullName} - {owner.ownership}%
+                        {owner.isCEO && " (CEO)"}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

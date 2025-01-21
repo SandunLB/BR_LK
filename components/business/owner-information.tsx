@@ -8,10 +8,9 @@ interface Owner {
   id: string
   fullName: string
   ownership: string
-  isCompany: boolean
   isCEO?: boolean
   birthDate?: string
-  drivingLicense?: File | null
+  document?: File | null
 }
 
 interface OwnerInformationProps {
@@ -21,7 +20,7 @@ interface OwnerInformationProps {
 
 export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
   const [owners, setOwners] = useState<Owner[]>([
-    { id: '1', fullName: '', ownership: '', isCompany: false }
+    { id: '1', fullName: '', ownership: '' }
   ])
   const [validationMessage, setValidationMessage] = useState<string>('')
 
@@ -30,7 +29,6 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
       id: Date.now().toString(),
       fullName: '',
       ownership: '',
-      isCompany: false,
       isCEO: false
     }])
   }
@@ -40,14 +38,9 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
       const ownerToRemove = owners.find(o => o.id === id)
       const updatedOwners = owners.filter(owner => owner.id !== id)
       
-      // If removing CEO, assign to first non-company owner
-      if (ownerToRemove?.isCEO) {
-        const firstNonCompanyOwner = updatedOwners.find(o => !o.isCompany)
-        if (firstNonCompanyOwner) {
-          updatedOwners.forEach(owner => {
-            owner.isCEO = owner.id === firstNonCompanyOwner.id
-          })
-        }
+      // If removing CEO, assign to first owner
+      if (ownerToRemove?.isCEO && updatedOwners.length > 0) {
+        updatedOwners[0].isCEO = true
       }
       
       setOwners(updatedOwners)
@@ -60,22 +53,8 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
         const updatedOwner = { ...owner }
 
         if (field === 'ownership') {
-          // Ensure ownership is a valid number between 0 and 100
           const numValue = value === '' ? '' : Math.min(100, Math.max(0, Number(value)))
           updatedOwner[field] = numValue.toString()
-        } else if (field === 'isCompany' && value === true) {
-          // If marking as company, remove CEO status
-          updatedOwner.isCompany = true
-          updatedOwner.isCEO = false
-          // If this was the CEO, reassign CEO to another non-company owner
-          if (owner.isCEO) {
-            const newCEO = owners.find(o => !o.isCompany && o.id !== id)
-            if (newCEO) {
-              owners.forEach(o => {
-                if (o.id === newCEO.id) o.isCEO = true
-              })
-            }
-          }
         } else if (field === 'isCEO' && value === true) {
           // Remove CEO status from all other owners
           owners.forEach(o => {
@@ -95,7 +74,6 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
   const validateOwners = (): boolean => {
     const totalOwnership = owners.reduce((sum, owner) => sum + (Number(owner.ownership) || 0), 0)
     
-    // Enhanced ownership validation
     if (totalOwnership < 100) {
       const remaining = 100 - totalOwnership
       setValidationMessage(`Total ownership is ${totalOwnership}%. You need ${remaining}% more to reach 100%.`)
@@ -106,26 +84,24 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
       return false
     }
 
-    // For multiple owners, validate CEO requirements
-    if (owners.length > 1) {
-      // Check exactly one CEO is designated
+    // Single owner validation
+    if (owners.length === 1) {
+      const owner = owners[0]
+      if (!owner.birthDate || !owner.document) {
+        setValidationMessage('Please complete all required information (birth date and identification document)')
+        return false
+      }
+    } else {
+      // Multiple owners - validate CEO
       const ceoCount = owners.filter(owner => owner.isCEO).length
       if (ceoCount !== 1) {
         setValidationMessage('Please designate exactly one owner as CEO')
         return false
       }
 
-      // Check CEO has required fields
       const ceo = owners.find(owner => owner.isCEO)
-      if (ceo && (!ceo.birthDate || !ceo.drivingLicense)) {
-        setValidationMessage('Please complete all required CEO information (birth date and driving license)')
-        return false
-      }
-
-      // Check only one company owner
-      const companyCount = owners.filter(owner => owner.isCompany).length
-      if (companyCount > 1) {
-        setValidationMessage('Only one owner can be marked as a company')
+      if (ceo && (!ceo.birthDate || !ceo.document)) {
+        setValidationMessage('Please complete all required CEO information (birth date and identification document)')
         return false
       }
     }
@@ -143,7 +119,7 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
 
   const handleFileChange = (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null
-    updateOwner(id, 'drivingLicense', file)
+    updateOwner(id, 'document', file)
   }
 
   const getOwnershipStatus = () => {
@@ -184,42 +160,26 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
               )}
             </div>
 
-            <div className="flex items-center space-x-4">
+            {owners.length > 1 && (
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id={`isCompany-${owner.id}`}
-                  checked={owner.isCompany}
-                  onCheckedChange={(checked) => updateOwner(owner.id, 'isCompany', !!checked)}
-                  disabled={owners.length > 1 && owners.some(o => o.isCompany && o.id !== owner.id)}
+                  id={`isCEO-${owner.id}`}
+                  checked={owner.isCEO}
+                  onCheckedChange={(checked) => updateOwner(owner.id, 'isCEO', !!checked)}
                 />
-                <label htmlFor={`isCompany-${owner.id}`} className="text-sm font-medium">
-                  Owner is a company
+                <label htmlFor={`isCEO-${owner.id}`} className="text-sm font-medium">
+                  CEO
                 </label>
               </div>
-
-              {owners.length > 1 && !owner.isCompany && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`isCEO-${owner.id}`}
-                    checked={owner.isCEO}
-                    onCheckedChange={(checked) => updateOwner(owner.id, 'isCEO', !!checked)}
-                  />
-                  <label htmlFor={`isCEO-${owner.id}`} className="text-sm font-medium">
-                    CEO
-                  </label>
-                </div>
-              )}
-            </div>
+            )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {owner.isCompany ? "Company Full Name" : "Full Name"}
-              </label>
+              <label className="text-sm font-medium">Full Name</label>
               <Input
                 required
                 value={owner.fullName}
                 onChange={(e) => updateOwner(owner.id, 'fullName', e.target.value)}
-                placeholder={owner.isCompany ? "Enter company full name" : "Enter full name"}
+                placeholder="Enter full name"
                 className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
               />
             </div>
@@ -238,7 +198,8 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
               />
             </div>
 
-            {owner.isCEO && (
+            {/* Show personal info for single owner or CEO */}
+            {(owners.length === 1 || owner.isCEO) && (
               <div className="space-y-4 pt-2 border-t">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Birth Date</label>
@@ -252,16 +213,37 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Driving License</label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      required
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange(owner.id, e)}
-                      className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
-                    />
-                    <FileUp className="h-5 w-5 text-gray-400" />
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium">ID Document</label>
+                    <p className="text-sm text-gray-500">
+                      Please upload either your{' '}
+                      <span className="font-medium text-indigo-600">Driving License</span>
+                      {' '}or{' '}
+                      <span className="font-medium text-indigo-600">Passport</span>
+                    </p>
+                  </div>
+                  
+                  <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        required
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleFileChange(owner.id, e)}
+                        className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
+                      />
+                      <FileUp className="h-5 w-5 text-gray-400" />
+                    </div>
+                    
+                    <div className="mt-2 flex items-center text-xs text-gray-500">
+                      <span className="flex items-center">
+                        <span className="inline-block w-1.5 h-1.5 bg-indigo-600 rounded-full mr-1"></span>
+                        Accepted formats:
+                      </span>
+                      <span className="ml-1 font-medium">
+                        PDF, JPG, JPEG, PNG
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -19,7 +19,9 @@ interface ReviewProps {
       id: string
       fullName: string
       ownership: string
-      isCompany: boolean
+      isCEO?: boolean
+      birthDate?: string
+      document?: File | null
     }>
     address: {
       street: string
@@ -179,18 +181,34 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
               {Array.isArray(data.owner) ? (
                 data.owner.map((owner, index) => (
                   <div key={owner.id} className="border-b last:border-b-0 pb-4 last:pb-0">
-                    <h4 className="font-medium mb-3">Owner {index + 1}</h4>
+                    <h4 className="font-medium mb-3">
+                      Owner {index + 1} {owner.isCEO && " (CEO)"}
+                    </h4>
                     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
-                        <dt className="text-sm font-medium text-gray-500">
-                          {owner.isCompany ? 'Company Name' : 'Full Name'}
-                        </dt>
+                        <dt className="text-sm font-medium text-gray-500">Full Name</dt>
                         <dd className="mt-1 font-medium">{owner.fullName}</dd>
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Ownership</dt>
                         <dd className="mt-1 font-medium">{owner.ownership}%</dd>
                       </div>
+                      {(owner.isCEO || data.owner.length === 1) && (
+                        <>
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">Birth Date</dt>
+                            <dd className="mt-1 font-medium">
+                              {owner.birthDate ? new Date(owner.birthDate).toLocaleDateString() : 'Not provided'}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-sm font-medium text-gray-500">ID Document</dt>
+                            <dd className="mt-1 font-medium">
+                              {owner.document ? owner.document.name : 'Not provided'}
+                            </dd>
+                          </div>
+                        </>
+                      )}
                     </dl>
                   </div>
                 ))

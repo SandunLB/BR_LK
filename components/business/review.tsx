@@ -55,7 +55,10 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           ))}
         </ul>
         <p className="text-gray-600 mb-6">Please go back and fill in all required fields.</p>
-        <Button onClick={onBack} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+        <Button
+          onClick={onBack}
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+        >
           Go Back
         </Button>
       </div>
@@ -86,8 +89,8 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Registration Details</span>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => onEdit(1)}
                 className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               >
@@ -109,8 +112,8 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Package Details</span>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => onEdit(2)}
                 className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               >
@@ -136,8 +139,8 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Company Details</span>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => onEdit(3)}
                 className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               >
@@ -167,8 +170,8 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Owner Details</span>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => onEdit(4)}
                 className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               >
@@ -198,19 +201,18 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
                           <div>
                             <dt className="text-sm font-medium text-gray-500">Birth Date</dt>
                             <dd className="mt-1 font-medium">
-                              {owner.birthDate ? new Date(owner.birthDate).toLocaleDateString() : 'Not provided'}
+                              {owner.birthDate ? new Date(owner.birthDate).toLocaleDateString() : "Not provided"}
                             </dd>
                           </div>
                           <div>
-                          <dd className="mt-1 font-medium">
-                          {
-                            owner.document && owner.document.name
-                              ? owner.document.name.length > 25
-                                ? owner.document.name.slice(0, 25) + "..." + owner.document.name.split(".").pop()
-                                : owner.document.name
-                              : "Not provided"
-                          }
-                          </dd>
+                            <dt className="text-sm font-medium text-gray-500">ID Document</dt>
+                            <dd className="mt-1 font-medium">
+                              {owner.document && owner.document.name
+                                ? owner.document.name.length > 25
+                                  ? owner.document.name.slice(0, 25) + "..." + owner.document.name.split(".").pop()
+                                  : owner.document.name
+                                : "Not provided"}
+                            </dd>
                           </div>
                         </>
                       )}
@@ -228,8 +230,8 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Address Details</span>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => onEdit(5)}
                 className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
               >
@@ -267,14 +269,10 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
       </div>
 
       <div className="flex justify-center gap-4 pt-4">
-        <Button 
-          variant="outline" 
-          onClick={onBack}
-          className="px-8"
-        >
+        <Button variant="outline" onClick={onBack} className="px-8">
           Back
         </Button>
-        <Button 
+        <Button
           onClick={onNext}
           className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
         >
@@ -284,3 +282,4 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
     </div>
   )
 }
+

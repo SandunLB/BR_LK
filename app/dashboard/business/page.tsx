@@ -13,7 +13,7 @@ import { OwnerInformation } from "@/components/business/owner-information"
 import { AddressDetails } from "@/components/business/address-details"
 import { Review } from "@/components/business/review"
 import { Payment } from "@/components/business/payment"
-import { Building } from "lucide-react"
+import { Building, Loader2 } from "lucide-react"
 
 interface FormData {
   country?: {
@@ -59,40 +59,38 @@ const steps = [
 export default function BusinessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const showRegistration = searchParams.get("register") === "true"
+  const [showRegistration, setShowRegistration] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<FormData>({})
   const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedStep = sessionStorage.getItem("businessRegistrationStep")
-      const savedData = sessionStorage.getItem("businessRegistrationData")
+    const initializeData = () => {
+      if (typeof window !== "undefined") {
+        const savedStep = sessionStorage.getItem("businessRegistrationStep")
+        const savedData = sessionStorage.getItem("businessRegistrationData")
 
-      if (savedStep) {
-        setCurrentStep(Number.parseInt(savedStep, 10))
-      }
-
-      if (savedData) {
-        setFormData(JSON.parse(savedData))
-      }
-
-      if (savedStep || savedData) {
-        router.push("/dashboard/business?register=true")
-      }
-    }
-  }, [router])
-
-  useEffect(() => {
-    if (showRegistration) {
-      setCurrentStep((prevStep) => {
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("businessRegistrationStep", prevStep.toString())
+        if (savedStep) {
+          setCurrentStep(Number.parseInt(savedStep, 10))
         }
-        return prevStep
-      })
+
+        if (savedData) {
+          setFormData(JSON.parse(savedData))
+        }
+
+        const registerParam = searchParams.get("register")
+        setShowRegistration(registerParam === "true" || !!savedStep || !!savedData)
+
+        if ((registerParam === "true" || !!savedStep || !!savedData) && !showRegistration) {
+          router.push("/dashboard/business?register=true")
+        }
+      }
+      setIsLoading(false)
     }
-  }, [showRegistration])
+
+    initializeData()
+  }, [router, searchParams, showRegistration])
 
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
@@ -118,7 +116,6 @@ export default function BusinessPage() {
           }
           break
         case 4:
-          // Handle owner data with new fields
           newData.owner = stepData.map((owner: any) => ({
             id: owner.id,
             fullName: owner.fullName,
@@ -289,6 +286,16 @@ export default function BusinessPage() {
           </CardContent>
         </Card>
       </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        </div>
+      </DashboardLayout>
     )
   }
 

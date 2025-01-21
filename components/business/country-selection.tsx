@@ -8,7 +8,6 @@ const countries = [
     id: "us",
     name: "United States",
     code: "us",
-    price: 599,
     processingTime: "5-7 business days",
     features: ["LLC/Corporation Formation", "EIN Registration", "Registered Agent (1 year)", "Operating Agreement"],
   },
@@ -16,7 +15,6 @@ const countries = [
     id: "uk",
     name: "United Kingdom",
     code: "gb",
-    price: 499,
     processingTime: "3-5 business days",
     features: ["Limited Company Formation", "VAT Registration", "Company Secretary", "Articles of Association"],
   },
@@ -85,10 +83,6 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
             </CardHeader>
             <CardContent className="relative">
               <div className="space-y-4">
-                <div>
-                  <span className="text-2xl font-bold text-indigo-600">${country.price}</span>
-                  <span className="text-gray-500 ml-2">one-time fee</span>
-                </div>
                 <div className="text-sm text-gray-500">Processing time: {country.processingTime}</div>
                 <ul className="space-y-2">
                   {country.features.map((feature) => (

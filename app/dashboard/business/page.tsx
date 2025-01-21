@@ -18,7 +18,6 @@ import { Building } from "lucide-react"
 interface FormData {
   country?: {
     name: string
-    price: number
   }
   package?: {
     name: string
@@ -76,8 +75,7 @@ export default function BusinessPage() {
       switch (currentStep) {
         case 1:
           newData.country = {
-            name: stepData.name,
-            price: stepData.price
+            name: stepData.name
           }
           break
         case 2:
@@ -94,7 +92,6 @@ export default function BusinessPage() {
           }
           break
         case 4:
-          // Handle array of owners
           newData.owner = stepData
           break
         case 5:
@@ -156,7 +153,7 @@ export default function BusinessPage() {
       case 7:
         return (
           <Payment
-            amount={(formData.country?.price || 0) + (formData.package?.price || 0)}
+            amount={formData.package?.price || 0}
             onComplete={handlePaymentComplete}
             onBack={handleBack}
           />

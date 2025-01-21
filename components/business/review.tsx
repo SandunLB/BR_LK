@@ -5,7 +5,6 @@ interface ReviewProps {
   data: {
     country: {
       name: string
-      price: number
     }
     package: {
       name: string
@@ -61,8 +60,6 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
     )
   }
 
-  const totalCost = ((data.country?.price || 0) + (data.package?.price || 0)).toFixed(2)
-
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="text-center">
@@ -74,10 +71,10 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
 
       <Card className="border-2 border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50">
         <CardHeader>
-          <CardTitle className="text-center text-xl">Total Cost Summary</CardTitle>
+          <CardTitle className="text-center text-xl">Total Cost</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-4xl font-bold text-indigo-600">${totalCost}</p>
+          <p className="text-4xl font-bold text-indigo-600">${data.package.price}</p>
           <p className="text-sm text-gray-500 mt-1">One-time fee</p>
         </CardContent>
       </Card>
@@ -97,14 +94,10 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Country</dt>
                 <dd className="mt-1 font-medium">{data.country.name}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Price</dt>
-                <dd className="mt-1 font-medium">${data.country.price}</dd>
               </div>
             </dl>
           </CardContent>

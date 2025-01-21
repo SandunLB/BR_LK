@@ -64,7 +64,7 @@ const industries = [
     { id: "personal_services", name: "Personal Services" },
     { id: "nonprofit", name: "Non-Profit Organization" },
     { id: "other", name: "Other Services" }
-  ]
+]
 
 interface CompanyDetailsProps {
   onNext: (details: {
@@ -79,10 +79,32 @@ export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
   const [name, setName] = useState("")
   const [type, setType] = useState("")
   const [industry, setIndustry] = useState("")
+  const [nameError, setNameError] = useState("")
+
+  const validateCompanyName = (value: string) => {
+    // Regular expression to check for any symbols except '&'
+    const invalidSymbolsRegex = /[^a-zA-Z0-9\s&]/
+    
+    if (invalidSymbolsRegex.test(value)) {
+      setNameError("Only letters, numbers, spaces, and '&' symbol are allowed")
+      return false
+    }
+    
+    setNameError("")
+    return true
+  }
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setName(value)
+    validateCompanyName(value)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onNext({ name, type, industry })
+    if (validateCompanyName(name)) {
+      onNext({ name, type, industry })
+    }
   }
 
   return (
@@ -100,10 +122,15 @@ export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
           <Input
             required
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={handleNameChange}
             placeholder="Enter your company name"
-            className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
+            className={`border-gray-200 focus:border-indigo-600 focus:ring-indigo-600 ${
+              nameError ? "border-red-500" : ""
+            }`}
           />
+          {nameError && (
+            <p className="text-sm text-red-500 mt-1">{nameError}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -149,7 +176,7 @@ export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
           </Button>
           <Button 
             type="submit" 
-            disabled={!name || !type || !industry}
+            disabled={!name || !type || !industry || nameError !== ""}
             className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           >
             Continue

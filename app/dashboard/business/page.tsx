@@ -73,24 +73,24 @@ export default function BusinessPage() {
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
       const newData = { ...prev }
-      
+
       switch (currentStep) {
         case 1:
           newData.country = {
-            name: stepData.name
+            name: stepData.name,
           }
           break
         case 2:
           newData.package = {
             name: stepData.name,
-            price: stepData.price
+            price: stepData.price,
           }
           break
         case 3:
           newData.company = {
             name: stepData.name,
             type: stepData.type,
-            industry: stepData.industry
+            industry: stepData.industry,
           }
           break
         case 4:
@@ -101,7 +101,7 @@ export default function BusinessPage() {
             ownership: owner.ownership,
             isCEO: owner.isCEO,
             birthDate: owner.birthDate,
-            document: owner.document
+            document: owner.document,
           }))
           break
         case 5:
@@ -110,13 +110,13 @@ export default function BusinessPage() {
             city: stepData.city,
             state: stepData.state,
             postalCode: stepData.postalCode,
-            country: stepData.country
+            country: stepData.country,
           }
           break
         default:
           Object.assign(newData, stepData)
       }
-      
+
       return newData
     })
     setCurrentStep((prev) => prev + 1)
@@ -124,7 +124,7 @@ export default function BusinessPage() {
 
   const handleBack = () => {
     if (currentStep === 1) {
-      router.push('/dashboard/business')
+      router.push("/dashboard/business")
     } else {
       setCurrentStep((prev) => prev - 1)
     }
@@ -142,32 +142,26 @@ export default function BusinessPage() {
   const renderRegistrationStep = () => {
     switch (currentStep) {
       case 1:
-        return <CountrySelection onNext={handleNext} />
+        return <CountrySelection onNext={handleNext} initialData={formData.country} />
       case 2:
-        return <PackageSelection onNext={handleNext} onBack={handleBack} />
+        return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />
       case 3:
-        return <CompanyDetails onNext={handleNext} onBack={handleBack} />
+        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />
       case 4:
-        return <OwnerInformation onNext={handleNext} onBack={handleBack} />
+        return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />
       case 5:
-        return <AddressDetails onNext={handleNext} onBack={handleBack} />
+        return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />
       case 6:
         return (
-          <Review 
-            data={formData as Required<FormData>} 
-            onNext={() => setCurrentStep(7)} 
-            onBack={handleBack} 
-            onEdit={handleEdit} 
+          <Review
+            data={formData as Required<FormData>}
+            onNext={() => setCurrentStep(7)}
+            onBack={handleBack}
+            onEdit={handleEdit}
           />
         )
       case 7:
-        return (
-          <Payment
-            amount={formData.package?.price || 0}
-            onComplete={handlePaymentComplete}
-            onBack={handleBack}
-          />
-        )
+        return <Payment amount={formData.package?.price || 0} onComplete={handlePaymentComplete} onBack={handleBack} />
       case 8:
         return (
           <div className="text-center">
@@ -175,7 +169,7 @@ export default function BusinessPage() {
               Registration Complete!
             </h2>
             <p className="text-gray-600 mb-6">Thank you for registering your business with us.</p>
-            <Button 
+            <Button
               onClick={() => router.push("/dashboard/business")}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
             >
@@ -203,8 +197,8 @@ export default function BusinessPage() {
               Registering your business is the first step towards growth and success. Our streamlined process makes it
               easy to get started.
             </p>
-            <Button 
-              onClick={() => router.push('/dashboard/business?register=true')}
+            <Button
+              onClick={() => router.push("/dashboard/business?register=true")}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
             >
               <Building className="mr-2 h-4 w-4" />
@@ -239,8 +233,7 @@ export default function BusinessPage() {
                   <div className="mt-2 space-y-2">
                     {formData.owner.map((owner) => (
                       <p key={owner.id} className="text-gray-500">
-                        {owner.fullName} - {owner.ownership}%
-                        {owner.isCEO && " (CEO)"}
+                        {owner.fullName} - {owner.ownership}%{owner.isCEO && " (CEO)"}
                       </p>
                     ))}
                   </div>
@@ -268,9 +261,7 @@ export default function BusinessPage() {
             <Card>
               <CardContent className="pt-6">
                 <Stepper steps={steps} currentStep={currentStep} />
-                <div className="mt-8">
-                  {renderRegistrationStep()}
-                </div>
+                <div className="mt-8">{renderRegistrationStep()}</div>
               </CardContent>
             </Card>
           </>
@@ -289,3 +280,4 @@ export default function BusinessPage() {
     </DashboardLayout>
   )
 }
+

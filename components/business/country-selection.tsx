@@ -22,10 +22,13 @@ const countries = [
 
 interface CountrySelectionProps {
   onNext: (country: (typeof countries)[0]) => void
+  initialData?: { name: string }
 }
 
-export function CountrySelection({ onNext }: CountrySelectionProps) {
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
+export function CountrySelection({ onNext, initialData }: CountrySelectionProps) {
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(
+    initialData ? countries.find((c) => c.name === initialData.name)?.id || null : null,
+  )
 
   return (
     <div className="space-y-6">
@@ -43,25 +46,23 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
           <Card
             key={country.id}
             className={`cursor-pointer transition-all relative overflow-hidden group h-full ${
-              selectedCountry === country.id 
-                ? "ring-2 ring-indigo-600 border-transparent" 
-                : "hover:border-gray-300"
+              selectedCountry === country.id ? "ring-2 ring-indigo-600 border-transparent" : "hover:border-gray-300"
             }`}
             onClick={() => setSelectedCountry(country.id)}
             aria-label={`Select ${country.name}`}
           >
             {/* Background Flag */}
-            <div 
+            <div
               className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity"
               style={{
                 backgroundImage: `url(https://flagcdn.com/w640/${country.code.toLowerCase()}.png)`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                transform: 'scale(1.2)',
-                filter: 'grayscale(30%)',
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                transform: "scale(1.2)",
+                filter: "grayscale(30%)",
               }}
             />
-            
+
             <CardHeader className="relative pb-4">
               <CardTitle className="flex items-center min-h-[28px]">
                 <div className="flex items-center gap-2 flex-1">
@@ -72,12 +73,12 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
                   />
                   <span className="font-semibold">{country.name}</span>
                 </div>
-                <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                  selectedCountry === country.id ? "bg-indigo-600" : "bg-transparent"
-                }`}>
-                  {selectedCountry === country.id && (
-                    <Check className="h-5 w-5 text-white" />
-                  )}
+                <div
+                  className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                    selectedCountry === country.id ? "bg-indigo-600" : "bg-transparent"
+                  }`}
+                >
+                  {selectedCountry === country.id && <Check className="h-5 w-5 text-white" />}
                 </div>
               </CardTitle>
             </CardHeader>
@@ -112,3 +113,4 @@ export function CountrySelection({ onNext }: CountrySelectionProps) {
     </div>
   )
 }
+

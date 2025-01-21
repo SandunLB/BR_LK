@@ -16,64 +16,68 @@ interface Owner {
 interface OwnerInformationProps {
   onNext: (owners: Owner[]) => void
   onBack: () => void
+  initialData?: Owner[]
 }
 
-export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
-  const [owners, setOwners] = useState<Owner[]>([
-    { id: '1', fullName: '', ownership: '' }
-  ])
-  const [validationMessage, setValidationMessage] = useState<string>('')
+export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformationProps) {
+  const [owners, setOwners] = useState<Owner[]>(initialData || [{ id: "1", fullName: "", ownership: "" }])
+  const [validationMessage, setValidationMessage] = useState<string>("")
 
   const addOwner = () => {
-    setOwners([...owners, { 
-      id: Date.now().toString(),
-      fullName: '',
-      ownership: '',
-      isCEO: false
-    }])
+    setOwners([
+      ...owners,
+      {
+        id: Date.now().toString(),
+        fullName: "",
+        ownership: "",
+        isCEO: false,
+      },
+    ])
   }
 
   const removeOwner = (id: string) => {
     if (owners.length > 1) {
-      const ownerToRemove = owners.find(o => o.id === id)
-      const updatedOwners = owners.filter(owner => owner.id !== id)
-      
+      const ownerToRemove = owners.find((o) => o.id === id)
+      const updatedOwners = owners.filter((owner) => owner.id !== id)
+
       // If removing CEO, assign to first owner
       if (ownerToRemove?.isCEO && updatedOwners.length > 0) {
         updatedOwners[0].isCEO = true
       }
-      
+
       setOwners(updatedOwners)
     }
   }
 
   const updateOwner = (id: string, field: keyof Owner, value: string | boolean | File | null) => {
-    setOwners(owners.map(owner => {
-      if (owner.id === id) {
-        const updatedOwner = { ...owner }
+    setOwners(
+      owners.map((owner) => {
+        if (owner.id === id) {
+          const updatedOwner = { ...owner }
 
-        if (field === 'ownership') {
-          const numValue = value === '' ? '' : Math.min(100, Math.max(0, Number(value)))
-          updatedOwner[field] = numValue.toString()
-        } else if (field === 'isCEO' && value === true) {
-          // Remove CEO status from all other owners
-          owners.forEach(o => {
-            if (o.id !== id) o.isCEO = false
-          })
-          updatedOwner.isCEO = true
-        } else {
-          updatedOwner[field] = value as never
+          if (field === "ownership") {
+            const numValue = value === "" ? "" : Math.min(100, Math.max(0, Number(value)))
+            updatedOwner[field] = numValue.toString()
+          } else if (field === "isCEO" && value === true) {
+            // Remove CEO status from all other owners
+            owners.forEach((o) => {
+              if (o.id !== id) o.isCEO = false
+            })
+            updatedOwner.isCEO = true
+          } else {
+            updatedOwner[field] = value as never
+          }
+
+          return updatedOwner
         }
-
-        return updatedOwner
-      }
-      return owner
-    }))
+        return owner
+      }),
+    )
   }
 
   const validateOwners = (): boolean => {
     const totalOwnership = owners.reduce((sum, owner) => sum + (Number(owner.ownership) || 0), 0)
-    
+
     if (totalOwnership < 100) {
       const remaining = 100 - totalOwnership
       setValidationMessage(`Total ownership is ${totalOwnership}%. You need ${remaining}% more to reach 100%.`)
@@ -88,25 +92,25 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
     if (owners.length === 1) {
       const owner = owners[0]
       if (!owner.birthDate || !owner.document) {
-        setValidationMessage('Please complete all required information (birth date and identification document)')
+        setValidationMessage("Please complete all required information (birth date and identification document)")
         return false
       }
     } else {
       // Multiple owners - validate CEO
-      const ceoCount = owners.filter(owner => owner.isCEO).length
+      const ceoCount = owners.filter((owner) => owner.isCEO).length
       if (ceoCount !== 1) {
-        setValidationMessage('Please designate exactly one owner as CEO')
+        setValidationMessage("Please designate exactly one owner as CEO")
         return false
       }
 
-      const ceo = owners.find(owner => owner.isCEO)
+      const ceo = owners.find((owner) => owner.isCEO)
       if (ceo && (!ceo.birthDate || !ceo.document)) {
-        setValidationMessage('Please complete all required CEO information (birth date and identification document)')
+        setValidationMessage("Please complete all required CEO information (birth date and identification document)")
         return false
       }
     }
-    
-    setValidationMessage('')
+
+    setValidationMessage("")
     return true
   }
 
@@ -119,17 +123,17 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
 
   const handleFileChange = (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null
-    updateOwner(id, 'document', file)
+    updateOwner(id, "document", file)
   }
 
   const getOwnershipStatus = () => {
     const totalOwnership = owners.reduce((sum, owner) => sum + (Number(owner.ownership) || 0), 0)
     if (totalOwnership === 100) {
-      return { color: 'text-green-600', message: `${totalOwnership}% (Valid)` }
+      return { color: "text-green-600", message: `${totalOwnership}% (Valid)` }
     } else if (totalOwnership < 100) {
-      return { color: 'text-orange-600', message: `${totalOwnership}% (Need ${100 - totalOwnership}% more)` }
+      return { color: "text-orange-600", message: `${totalOwnership}% (Need ${100 - totalOwnership}% more)` }
     } else {
-      return { color: 'text-red-600', message: `${totalOwnership}% (Exceeds by ${totalOwnership - 100}%)` }
+      return { color: "text-red-600", message: `${totalOwnership}% (Exceeds by ${totalOwnership - 100}%)` }
     }
   }
 
@@ -165,7 +169,7 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
                 <Checkbox
                   id={`isCEO-${owner.id}`}
                   checked={owner.isCEO}
-                  onCheckedChange={(checked) => updateOwner(owner.id, 'isCEO', !!checked)}
+                  onCheckedChange={(checked) => updateOwner(owner.id, "isCEO", !!checked)}
                 />
                 <label htmlFor={`isCEO-${owner.id}`} className="text-sm font-medium">
                   CEO
@@ -178,7 +182,7 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
               <Input
                 required
                 value={owner.fullName}
-                onChange={(e) => updateOwner(owner.id, 'fullName', e.target.value)}
+                onChange={(e) => updateOwner(owner.id, "fullName", e.target.value)}
                 placeholder="Enter full name"
                 className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
               />
@@ -192,7 +196,7 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
                 min="0"
                 max="100"
                 value={owner.ownership}
-                onChange={(e) => updateOwner(owner.id, 'ownership', e.target.value)}
+                onChange={(e) => updateOwner(owner.id, "ownership", e.target.value)}
                 placeholder="Enter ownership percentage"
                 className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
               />
@@ -206,8 +210,8 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
                   <Input
                     required
                     type="date"
-                    value={owner.birthDate || ''}
-                    onChange={(e) => updateOwner(owner.id, 'birthDate', e.target.value)}
+                    value={owner.birthDate || ""}
+                    onChange={(e) => updateOwner(owner.id, "birthDate", e.target.value)}
                     className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
                   />
                 </div>
@@ -216,13 +220,11 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
                   <div className="space-y-1">
                     <label className="text-sm font-medium">ID Document</label>
                     <p className="text-sm text-gray-500">
-                      Please upload either your{' '}
-                      <span className="font-medium text-indigo-600">Driving License</span>
-                      {' '}or{' '}
+                      Please upload either your <span className="font-medium text-indigo-600">Driving License</span> or{" "}
                       <span className="font-medium text-indigo-600">Passport</span>
                     </p>
                   </div>
-                  
+
                   <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex items-center space-x-2">
                       <Input
@@ -234,15 +236,13 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
                       />
                       <FileUp className="h-5 w-5 text-gray-400" />
                     </div>
-                    
+
                     <div className="mt-2 flex items-center text-xs text-gray-500">
                       <span className="flex items-center">
                         <span className="inline-block w-1.5 h-1.5 bg-indigo-600 rounded-full mr-1"></span>
                         Accepted formats:
                       </span>
-                      <span className="ml-1 font-medium">
-                        PDF, JPG, JPEG, PNG
-                      </span>
+                      <span className="ml-1 font-medium">PDF, JPG, JPEG, PNG</span>
                     </div>
                   </div>
                 </div>
@@ -254,17 +254,9 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">
-              Total Ownership: {' '}
-              <span className={getOwnershipStatus().color}>
-                {getOwnershipStatus().message}
-              </span>
+              Total Ownership: <span className={getOwnershipStatus().color}>{getOwnershipStatus().message}</span>
             </span>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addOwner}
-              className="flex items-center gap-2"
-            >
+            <Button type="button" variant="outline" onClick={addOwner} className="flex items-center gap-2">
               <Plus className="h-4 w-4" /> Add Another Owner
             </Button>
           </div>
@@ -277,17 +269,12 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
         </div>
 
         <div className="flex justify-center gap-4 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onBack}
-            className="px-8"
-          >
+          <Button type="button" variant="outline" onClick={onBack} className="px-8">
             Back
           </Button>
-          <Button 
+          <Button
             type="submit"
-            disabled={owners.some(owner => !owner.fullName || !owner.ownership)}
+            disabled={owners.some((owner) => !owner.fullName || !owner.ownership)}
             className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           >
             Continue
@@ -297,3 +284,4 @@ export function OwnerInformation({ onNext, onBack }: OwnerInformationProps) {
     </div>
   )
 }
+

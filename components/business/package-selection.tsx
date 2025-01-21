@@ -38,10 +38,13 @@ const packages = [
 interface PackageSelectionProps {
   onNext: (pkg: (typeof packages)[0]) => void
   onBack: () => void
+  initialData?: { name: string; price: number }
 }
 
-export function PackageSelection({ onNext, onBack }: PackageSelectionProps) {
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
+export function PackageSelection({ onNext, onBack, initialData }: PackageSelectionProps) {
+  const [selectedPackage, setSelectedPackage] = useState<string | null>(
+    initialData ? packages.find((p) => p.name === initialData.name)?.id || null : null,
+  )
 
   return (
     <div className="space-y-8">
@@ -59,9 +62,7 @@ export function PackageSelection({ onNext, onBack }: PackageSelectionProps) {
           <Card
             key={pkg.id}
             className={`relative cursor-pointer transition-all h-full ${
-              selectedPackage === pkg.id
-                ? "ring-2 ring-indigo-600 border-transparent"
-                : "hover:border-gray-300"
+              selectedPackage === pkg.id ? "ring-2 ring-indigo-600 border-transparent" : "hover:border-gray-300"
             }`}
             onClick={() => setSelectedPackage(pkg.id)}
             aria-label={`Select ${pkg.name} package`}
@@ -81,12 +82,12 @@ export function PackageSelection({ onNext, onBack }: PackageSelectionProps) {
                   <span className="text-2xl font-bold">{pkg.name}</span>
                   <span className="text-sm text-gray-500 mt-1">{pkg.description}</span>
                 </div>
-                <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                  selectedPackage === pkg.id ? "bg-indigo-600" : "bg-transparent"
-                }`}>
-                  {selectedPackage === pkg.id && (
-                    <Check className="h-5 w-5 text-white" />
-                  )}
+                <div
+                  className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                    selectedPackage === pkg.id ? "bg-indigo-600" : "bg-transparent"
+                  }`}
+                >
+                  {selectedPackage === pkg.id && <Check className="h-5 w-5 text-white" />}
                 </div>
               </CardTitle>
             </CardHeader>
@@ -103,22 +104,20 @@ export function PackageSelection({ onNext, onBack }: PackageSelectionProps) {
                     {pkg.features.map((feature) => (
                       <li
                         key={feature.name}
-                        className={`flex items-center gap-3 ${
-                          feature.included ? "text-gray-900" : "text-gray-400"
-                        }`}
+                        className={`flex items-center gap-3 ${feature.included ? "text-gray-900" : "text-gray-400"}`}
                       >
-                        <div className={`p-1 rounded-full flex-shrink-0 ${
-                          feature.included ? "bg-green-100" : "bg-gray-100"
-                        }`}>
+                        <div
+                          className={`p-1 rounded-full flex-shrink-0 ${
+                            feature.included ? "bg-green-100" : "bg-gray-100"
+                          }`}
+                        >
                           {feature.included ? (
                             <Check className="h-4 w-4 text-green-600" />
                           ) : (
                             <X className="h-4 w-4 text-gray-400" />
                           )}
                         </div>
-                        <span className={`text-sm ${feature.included ? "font-medium" : ""}`}>
-                          {feature.name}
-                        </span>
+                        <span className={`text-sm ${feature.included ? "font-medium" : ""}`}>{feature.name}</span>
                       </li>
                     ))}
                   </ul>
@@ -130,15 +129,11 @@ export function PackageSelection({ onNext, onBack }: PackageSelectionProps) {
       </div>
 
       <div className="flex justify-center gap-4">
-        <Button 
-          variant="outline" 
-          onClick={onBack}
-          className="px-8"
-        >
+        <Button variant="outline" onClick={onBack} className="px-8">
           Back
         </Button>
-        <Button 
-          disabled={!selectedPackage} 
+        <Button
+          disabled={!selectedPackage}
           onClick={() => onNext(packages.find((p) => p.id === selectedPackage)!)}
           className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
         >
@@ -148,3 +143,4 @@ export function PackageSelection({ onNext, onBack }: PackageSelectionProps) {
     </div>
   )
 }
+

@@ -197,7 +197,7 @@ const countries = [
   { id: "vn", name: "Vietnam" },
   { id: "ye", name: "Yemen" },
   { id: "zm", name: "Zambia" },
-  { id: "zw", name: "Zimbabwe" }
+  { id: "zw", name: "Zimbabwe" },
 ]
 
 interface AddressDetailsProps {
@@ -209,14 +209,21 @@ interface AddressDetailsProps {
     country: string
   }) => void
   onBack: () => void
+  initialData?: {
+    street: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+  }
 }
 
-export function AddressDetails({ onNext, onBack }: AddressDetailsProps) {
-  const [street, setStreet] = useState("")
-  const [city, setCity] = useState("")
-  const [state, setState] = useState("")
-  const [postalCode, setPostalCode] = useState("")
-  const [country, setCountry] = useState("")
+export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsProps) {
+  const [street, setStreet] = useState(initialData?.street || "")
+  const [city, setCity] = useState(initialData?.city || "")
+  const [state, setState] = useState(initialData?.state || "")
+  const [postalCode, setPostalCode] = useState(initialData?.postalCode || "")
+  const [country, setCountry] = useState(initialData?.country || "")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -247,11 +254,11 @@ export function AddressDetails({ onNext, onBack }: AddressDetailsProps) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium">City</label>
-            <Input 
-              required 
-              value={city} 
-              onChange={(e) => setCity(e.target.value)} 
-              placeholder="Enter city" 
+            <Input
+              required
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Enter city"
               className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
             />
           </div>
@@ -298,16 +305,11 @@ export function AddressDetails({ onNext, onBack }: AddressDetailsProps) {
         </div>
 
         <div className="flex justify-center gap-4 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onBack}
-            className="px-8"
-          >
+          <Button type="button" variant="outline" onClick={onBack} className="px-8">
             Back
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={!street || !city || !state || !postalCode || !country}
             className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           >
@@ -318,3 +320,4 @@ export function AddressDetails({ onNext, onBack }: AddressDetailsProps) {
     </div>
   )
 }
+

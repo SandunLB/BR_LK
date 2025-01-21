@@ -9,61 +9,61 @@ const companyTypes = [
 ]
 
 const industries = [
-    // Agriculture, Forestry, Fishing and Hunting
-    { id: "agriculture", name: "Agriculture, Forestry & Fishing" },
-    
-    // Mining and Energy
-    { id: "mining", name: "Mining & Quarrying" },
-    { id: "energy", name: "Energy & Utilities" },
-    
-    // Manufacturing
-    { id: "manufacturing", name: "Manufacturing" },
-    { id: "food_manufacturing", name: "Food & Beverage Manufacturing" },
-    { id: "textile", name: "Textile & Apparel" },
-    
-    // Construction
-    { id: "construction", name: "Construction" },
-    { id: "real_estate", name: "Real Estate & Property" },
-    
-    // Trade
-    { id: "wholesale", name: "Wholesale Trade" },
-    { id: "retail", name: "Retail Trade" },
-    
-    // Transportation and Storage
-    { id: "transportation", name: "Transportation & Logistics" },
-    { id: "warehouse", name: "Warehousing & Storage" },
-    
-    // Services
-    { id: "accommodation", name: "Accommodation & Food Services" },
-    { id: "information", name: "Information & Media" },
-    { id: "telecom", name: "Telecommunications" },
-    { id: "tech", name: "Information Technology" },
-    { id: "software", name: "Software Development" },
-    { id: "finance", name: "Financial Services" },
-    { id: "insurance", name: "Insurance" },
-    { id: "real_estate_services", name: "Real Estate Services" },
-    { id: "professional", name: "Professional Services" },
-    { id: "scientific", name: "Scientific & Technical Services" },
-    { id: "legal", name: "Legal Services" },
-    { id: "consulting", name: "Business Consulting" },
-    { id: "administrative", name: "Administrative Services" },
-    
-    // Healthcare
-    { id: "healthcare", name: "Healthcare & Medical" },
-    { id: "social_assistance", name: "Social Assistance" },
-    
-    // Entertainment and Recreation
-    { id: "arts", name: "Arts & Entertainment" },
-    { id: "recreation", name: "Recreation & Sports" },
-    
-    // Education
-    { id: "education", name: "Education & Training" },
-    
-    // Other Services
-    { id: "repair", name: "Repair & Maintenance" },
-    { id: "personal_services", name: "Personal Services" },
-    { id: "nonprofit", name: "Non-Profit Organization" },
-    { id: "other", name: "Other Services" }
+  // Agriculture, Forestry, Fishing and Hunting
+  { id: "agriculture", name: "Agriculture, Forestry & Fishing" },
+
+  // Mining and Energy
+  { id: "mining", name: "Mining & Quarrying" },
+  { id: "energy", name: "Energy & Utilities" },
+
+  // Manufacturing
+  { id: "manufacturing", name: "Manufacturing" },
+  { id: "food_manufacturing", name: "Food & Beverage Manufacturing" },
+  { id: "textile", name: "Textile & Apparel" },
+
+  // Construction
+  { id: "construction", name: "Construction" },
+  { id: "real_estate", name: "Real Estate & Property" },
+
+  // Trade
+  { id: "wholesale", name: "Wholesale Trade" },
+  { id: "retail", name: "Retail Trade" },
+
+  // Transportation and Storage
+  { id: "transportation", name: "Transportation & Logistics" },
+  { id: "warehouse", name: "Warehousing & Storage" },
+
+  // Services
+  { id: "accommodation", name: "Accommodation & Food Services" },
+  { id: "information", name: "Information & Media" },
+  { id: "telecom", name: "Telecommunications" },
+  { id: "tech", name: "Information Technology" },
+  { id: "software", name: "Software Development" },
+  { id: "finance", name: "Financial Services" },
+  { id: "insurance", name: "Insurance" },
+  { id: "real_estate_services", name: "Real Estate Services" },
+  { id: "professional", name: "Professional Services" },
+  { id: "scientific", name: "Scientific & Technical Services" },
+  { id: "legal", name: "Legal Services" },
+  { id: "consulting", name: "Business Consulting" },
+  { id: "administrative", name: "Administrative Services" },
+
+  // Healthcare
+  { id: "healthcare", name: "Healthcare & Medical" },
+  { id: "social_assistance", name: "Social Assistance" },
+
+  // Entertainment and Recreation
+  { id: "arts", name: "Arts & Entertainment" },
+  { id: "recreation", name: "Recreation & Sports" },
+
+  // Education
+  { id: "education", name: "Education & Training" },
+
+  // Other Services
+  { id: "repair", name: "Repair & Maintenance" },
+  { id: "personal_services", name: "Personal Services" },
+  { id: "nonprofit", name: "Non-Profit Organization" },
+  { id: "other", name: "Other Services" },
 ]
 
 interface CompanyDetailsProps {
@@ -73,23 +73,28 @@ interface CompanyDetailsProps {
     industry: string
   }) => void
   onBack: () => void
+  initialData?: {
+    name: string
+    type: string
+    industry: string
+  }
 }
 
-export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
-  const [name, setName] = useState("")
-  const [type, setType] = useState("")
-  const [industry, setIndustry] = useState("")
+export function CompanyDetails({ onNext, onBack, initialData }: CompanyDetailsProps) {
+  const [name, setName] = useState(initialData?.name || "")
+  const [type, setType] = useState(initialData?.type || "")
+  const [industry, setIndustry] = useState(initialData?.industry || "")
   const [nameError, setNameError] = useState("")
 
   const validateCompanyName = (value: string) => {
     // Regular expression to check for any symbols except '&'
     const invalidSymbolsRegex = /[^a-zA-Z0-9\s&]/
-    
+
     if (invalidSymbolsRegex.test(value)) {
       setNameError("Only letters, numbers, spaces, and '&' symbol are allowed")
       return false
     }
-    
+
     setNameError("")
     return true
   }
@@ -128,9 +133,7 @@ export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
               nameError ? "border-red-500" : ""
             }`}
           />
-          {nameError && (
-            <p className="text-sm text-red-500 mt-1">{nameError}</p>
-          )}
+          {nameError && <p className="text-sm text-red-500 mt-1">{nameError}</p>}
         </div>
 
         <div className="space-y-2">
@@ -166,16 +169,11 @@ export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
         </div>
 
         <div className="flex justify-center gap-4 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onBack}
-            className="px-8"
-          >
+          <Button type="button" variant="outline" onClick={onBack} className="px-8">
             Back
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={!name || !type || !industry || nameError !== ""}
             className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           >
@@ -186,3 +184,4 @@ export function CompanyDetails({ onNext, onBack }: CompanyDetailsProps) {
     </div>
   )
 }
+

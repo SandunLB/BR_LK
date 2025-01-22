@@ -1,29 +1,29 @@
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CreditCard } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
-import { loadStripe } from "@stripe/stripe-js"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreditCard } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { loadStripe } from "@stripe/stripe-js";
 
-// Make sure to use the correct environment variable name
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface PaymentProps {
-  amount: number
-  businessData: any
+  amount: number;
+  businessData: any;
+  onPaymentComplete: (details: { method: string; receiptUrl?: string; businessId: string }) => void;
 }
 
-export function Payment({ amount, businessData }: PaymentProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const { user } = useAuth()
+export function Payment({ amount, businessData, onPaymentComplete }: PaymentProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   const handlePayment = async () => {
     if (!user) {
-      console.error("User not logged in")
-      return
+      console.error("User not logged in");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -37,26 +37,26 @@ export function Payment({ amount, businessData }: PaymentProps) {
             userId: user.uid,
           },
         }),
-      })
+      });
 
-      const { sessionId } = await response.json()
-      const stripe = await stripePromise
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
 
       if (!stripe) {
-        throw new Error("Stripe failed to initialize")
+        throw new Error("Stripe failed to initialize");
       }
 
-      const { error } = await stripe.redirectToCheckout({ sessionId })
+      const { error } = await stripe.redirectToCheckout({ sessionId });
 
       if (error) {
-        console.error("Stripe checkout error:", error)
+        console.error("Stripe checkout error:", error);
       }
     } catch (error) {
-      console.error("Error initiating payment:", error)
+      console.error("Error initiating payment:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -92,6 +92,5 @@ export function Payment({ amount, businessData }: PaymentProps) {
         )}
       </Button>
     </div>
-  )
+  );
 }
-

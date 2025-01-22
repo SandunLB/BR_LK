@@ -1,49 +1,47 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Stepper } from "@/components/business/stepper"
-import { CountrySelection } from "@/components/business/country-selection"
-import { PackageSelection } from "@/components/business/package-selection"
-import { CompanyDetails } from "@/components/business/company-details"
-import { OwnerInformation } from "@/components/business/owner-information"
-import { AddressDetails } from "@/components/business/address-details"
-import { Review } from "@/components/business/review"
-import { Payment } from "@/components/business/payment"
-import { Building, Loader2 } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Stepper } from "@/components/business/stepper";
+import { CountrySelection } from "@/components/business/country-selection";
+import { PackageSelection } from "@/components/business/package-selection";
+import { CompanyDetails } from "@/components/business/company-details";
+import { OwnerInformation } from "@/components/business/owner-information";
+import { AddressDetails } from "@/components/business/address-details";
+import { Review } from "@/components/business/review";
+import { Payment } from "@/components/business/payment";
+import { Building, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface FormData {
-  country?: {
-    name: string
-  }
-  package?: {
-    name: string
-    price: number
-  }
-  company?: {
-    name: string
-    type: string
-    industry: string
-  }
+  country?: { name: string };
+  package?: { name: string; price: number };
+  company?: { name: string; type: string; industry: string };
   owner?: Array<{
-    id: string
-    fullName: string
-    ownership: string
-    isCEO?: boolean
-    birthDate?: string
-    document?: File | null
-  }>
+    id: string;
+    fullName: string;
+    ownership: string;
+    isCEO?: boolean;
+    birthDate?: string;
+    document?: File | null;
+  }>;
   address?: {
-    street: string
-    city: string
-    state: string
-    postalCode: string
-    country: string
-  }
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  paymentDetails?: {
+    amount: number;
+    currency: string;
+    status: string;
+    createdAt: string;
+    stripePaymentIntentId: string;
+  };
 }
 
 const steps = [
@@ -55,78 +53,73 @@ const steps = [
   { id: 6, name: "Review", description: "Review details" },
   { id: 7, name: "Payment", description: "Complete payment" },
   { id: 8, name: "Complete", description: "Registration complete" },
-]
+];
 
 export default function BusinessPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [showRegistration, setShowRegistration] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<FormData>({})
-  const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const { user } = useAuth()
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<FormData>({});
+  const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const initializeData = () => {
       if (typeof window !== "undefined") {
-        const savedStep = sessionStorage.getItem("businessRegistrationStep")
-        const savedData = sessionStorage.getItem("businessRegistrationData")
+        const savedStep = sessionStorage.getItem("businessRegistrationStep");
+        const savedData = sessionStorage.getItem("businessRegistrationData");
 
         if (savedStep) {
-          setCurrentStep(Number.parseInt(savedStep, 10))
+          setCurrentStep(Number.parseInt(savedStep, 10));
         }
 
         if (savedData) {
-          setFormData(JSON.parse(savedData))
+          setFormData(JSON.parse(savedData));
         }
 
-        const registerParam = searchParams.get("register")
-        const sessionId = searchParams.get("session_id")
+        const registerParam = searchParams.get("register");
+        const sessionId = searchParams.get("session_id");
 
         if (sessionId) {
           // Payment was successful, move to the final step
-          setCurrentStep(8)
-          setHasRegisteredBusiness(true)
-          sessionStorage.removeItem("businessRegistrationData")
-          sessionStorage.removeItem("businessRegistrationStep")
+          setCurrentStep(8);
+          setHasRegisteredBusiness(true);
+          sessionStorage.removeItem("businessRegistrationData");
+          sessionStorage.removeItem("businessRegistrationStep");
         } else {
-          setShowRegistration(registerParam === "true" || !!savedStep || !!savedData)
+          setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
 
           if ((registerParam === "true" || !!savedStep || !!savedData) && !showRegistration) {
-            router.push("/dashboard/business?register=true")
+            router.push("/dashboard/business?register=true");
           }
         }
       }
-      setIsLoading(false)
-    }
+      setIsLoading(false);
+    };
 
-    initializeData()
-  }, [router, searchParams, showRegistration])
+    initializeData();
+  }, [router, searchParams, showRegistration]);
 
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
-      const newData = { ...prev }
-
+      const newData = { ...prev };
+  
       switch (currentStep) {
         case 1:
-          newData.country = {
-            name: stepData.name,
-          }
-          break
+          newData.country = { name: stepData.name }; // Country name from country selection
+          break;
         case 2:
-          newData.package = {
-            name: stepData.name,
-            price: stepData.price,
-          }
-          break
+          newData.package = { name: stepData.name, price: stepData.price };
+          break;
         case 3:
           newData.company = {
             name: stepData.name,
             type: stepData.type,
             industry: stepData.industry,
-          }
-          break
+          };
+          break;
         case 4:
           newData.owner = stepData.map((owner: any) => ({
             id: owner.id,
@@ -135,79 +128,88 @@ export default function BusinessPage() {
             isCEO: owner.isCEO,
             birthDate: owner.birthDate,
             document: owner.document,
-          }))
-          break
+          }));
+          break;
         case 5:
           newData.address = {
             street: stepData.street,
             city: stepData.city,
             state: stepData.state,
             postalCode: stepData.postalCode,
-            country: stepData.country,
-          }
-          break
+            country: stepData.country, // Country name from address details
+          };
+          break;
+        case 7:
+          newData.paymentDetails = {
+            amount: stepData.amount,
+            currency: stepData.currency,
+            status: "paid",
+            createdAt: new Date().toISOString(),
+            stripePaymentIntentId: stepData.stripePaymentIntentId,
+          };
+          break;
         default:
-          Object.assign(newData, stepData)
+          Object.assign(newData, stepData);
       }
-
+  
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData))
+        sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
       }
-      return newData
-    })
+      return newData;
+    });
+  
     setCurrentStep((prev) => {
-      const newStep = prev + 1
+      const newStep = prev + 1;
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("businessRegistrationStep", newStep.toString())
+        sessionStorage.setItem("businessRegistrationStep", newStep.toString());
       }
-      return newStep
-    })
-  }
+      return newStep;
+    });
+  };
 
   const handleBack = () => {
     if (currentStep === 1) {
-      router.push("/dashboard/business")
+      router.push("/dashboard/business");
     } else {
       setCurrentStep((prev) => {
-        const newStep = prev - 1
+        const newStep = prev - 1;
         if (typeof window !== "undefined") {
-          sessionStorage.setItem("businessRegistrationStep", newStep.toString())
+          sessionStorage.setItem("businessRegistrationStep", newStep.toString());
         }
-        return newStep
-      })
+        return newStep;
+      });
     }
-  }
+  };
 
   const handleEdit = (step: number) => {
-    setCurrentStep(step)
+    setCurrentStep(step);
     if (typeof window !== "undefined") {
-      sessionStorage.setItem("businessRegistrationStep", step.toString())
+      sessionStorage.setItem("businessRegistrationStep", step.toString());
     }
-  }
+  };
 
   const handlePaymentComplete = (details: { method: string; receiptUrl?: string; businessId: string }) => {
-    setHasRegisteredBusiness(true)
-    setCurrentStep(8)
+    setHasRegisteredBusiness(true);
+    setCurrentStep(8);
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("businessRegistrationData")
-      sessionStorage.removeItem("businessRegistrationStep")
+      sessionStorage.removeItem("businessRegistrationData");
+      sessionStorage.removeItem("businessRegistrationStep");
     }
-    // Here you might want to do something with the businessId, like storing it in the user's profile
-    console.log("Business registered with ID:", details.businessId)
-  }
+    console.log("Business registered with ID:", details.businessId);
+  };
 
   const renderRegistrationStep = () => {
     switch (currentStep) {
       case 1:
-        return <CountrySelection onNext={handleNext} initialData={formData.country} />
+        return <CountrySelection onNext={handleNext} initialData={formData.country} />;
       case 2:
-        return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />
+        return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
       case 3:
-        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />
+        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />;
       case 4:
-        return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />
+        return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
       case 5:
-        return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />
+        return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />;
       case 6:
         return (
           <Review
@@ -216,9 +218,15 @@ export default function BusinessPage() {
             onBack={handleBack}
             onEdit={handleEdit}
           />
-        )
+        );
       case 7:
-        return <Payment amount={formData.package?.price || 0} businessData={formData} />
+        return (
+          <Payment
+            onPaymentComplete={handlePaymentComplete}
+            amount={formData.package?.price || 0}
+            businessData={formData}
+          />
+        );
       case 8:
         return (
           <div className="text-center">
@@ -233,11 +241,11 @@ export default function BusinessPage() {
               Go to Business Dashboard
             </Button>
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const renderBusinessDashboard = () => {
     if (!hasRegisteredBusiness) {
@@ -263,7 +271,7 @@ export default function BusinessPage() {
             </Button>
           </CardContent>
         </Card>
-      )
+      );
     }
 
     return (
@@ -296,12 +304,23 @@ export default function BusinessPage() {
                   </div>
                 </div>
               )}
+              {formData.paymentDetails && (
+                <div>
+                  <h3 className="font-medium text-gray-900">Payment Information</h3>
+                  <p className="text-gray-500">Amount: ${formData.paymentDetails.amount / 100}</p>
+                  <p className="text-gray-500">Currency: {formData.paymentDetails.currency.toUpperCase()}</p>
+                  <p className="text-gray-500">Status: {formData.paymentDetails.status}</p>
+                  <p className="text-gray-500">
+                    Date: {new Date(formData.paymentDetails.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
-    )
-  }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -310,7 +329,7 @@ export default function BusinessPage() {
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
   return (
@@ -345,6 +364,5 @@ export default function BusinessPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }
-

@@ -206,7 +206,7 @@ interface AddressDetailsProps {
     city: string
     state: string
     postalCode: string
-    country: string
+    country: string // Store country name here
   }) => void
   onBack: () => void
   initialData?: {
@@ -214,7 +214,7 @@ interface AddressDetailsProps {
     city: string
     state: string
     postalCode: string
-    country: string
+    country: string // Store country name here
   }
 }
 
@@ -223,11 +223,11 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
   const [city, setCity] = useState(initialData?.city || "")
   const [state, setState] = useState(initialData?.state || "")
   const [postalCode, setPostalCode] = useState(initialData?.postalCode || "")
-  const [country, setCountry] = useState(initialData?.country || "")
+  const [country, setCountry] = useState(initialData?.country || "") // Store country name here
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onNext({ street, city, state, postalCode, country })
+    onNext({ street, city, state, postalCode, country }) // Pass country name to onNext
   }
 
   return (
@@ -240,6 +240,7 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Street Address Input */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Street Address</label>
           <Input
@@ -251,6 +252,7 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
           />
         </div>
 
+        {/* City and State Inputs */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium">City</label>
@@ -275,6 +277,7 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
           </div>
         </div>
 
+        {/* Postal Code and Country Inputs */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium">Postal Code</label>
@@ -295,7 +298,7 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
               </SelectTrigger>
               <SelectContent>
                 {countries.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
+                  <SelectItem key={country.id} value={country.name}> {/* Use country.name as value */}
                     {country.name}
                   </SelectItem>
                 ))}
@@ -304,6 +307,7 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
           </div>
         </div>
 
+        {/* Back and Continue Buttons */}
         <div className="flex justify-center gap-4 pt-4">
           <Button type="button" variant="outline" onClick={onBack} className="px-8">
             Back
@@ -320,4 +324,3 @@ export function AddressDetails({ onNext, onBack, initialData }: AddressDetailsPr
     </div>
   )
 }
-

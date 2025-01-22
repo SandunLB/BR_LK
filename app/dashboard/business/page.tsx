@@ -15,6 +15,7 @@ import { Review } from "@/components/business/review";
 import { Payment } from "@/components/business/payment";
 import { Building, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { getBusinesses } from "@/utils/firebase";
 
 interface FormData {
   country?: { name: string };
@@ -61,15 +62,31 @@ export default function BusinessPage() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({});
-  const [hasRegisteredBusiness, setHasRegisteredBusiness] = useState(false);
+  const [existingBusinesses, setExistingBusinesses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      if (user?.uid) {
+        try {
+          const businesses = await getBusinesses(user.uid);
+          setExistingBusinesses(businesses);
+        } catch (error) {
+          console.error("Error fetching businesses:", error);
+        }
+      }
+    };
+
+    fetchBusinesses();
+  }, [user]);
 
   useEffect(() => {
     const initializeData = () => {
       if (typeof window !== "undefined") {
         const savedStep = sessionStorage.getItem("businessRegistrationStep");
         const savedData = sessionStorage.getItem("businessRegistrationData");
+        const registerParam = searchParams.get("register");
 
         if (savedStep) {
           setCurrentStep(Number.parseInt(savedStep, 10));
@@ -79,28 +96,13 @@ export default function BusinessPage() {
           setFormData(JSON.parse(savedData));
         }
 
-        const registerParam = searchParams.get("register");
-        const sessionId = searchParams.get("session_id");
-
-        if (sessionId) {
-          // Payment was successful, move to the final step
-          setCurrentStep(8);
-          setHasRegisteredBusiness(true);
-          sessionStorage.removeItem("businessRegistrationData");
-          sessionStorage.removeItem("businessRegistrationStep");
-        } else {
-          setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
-
-          if ((registerParam === "true" || !!savedStep || !!savedData) && !showRegistration) {
-            router.push("/dashboard/business?register=true");
-          }
-        }
+        setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
       }
       setIsLoading(false);
     };
 
     initializeData();
-  }, [router, searchParams, showRegistration]);
+  }, [router, searchParams]);
 
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
@@ -108,7 +110,7 @@ export default function BusinessPage() {
   
       switch (currentStep) {
         case 1:
-          newData.country = { name: stepData.name }; // Country name from country selection
+          newData.country = { name: stepData.name };
           break;
         case 2:
           newData.package = { name: stepData.name, price: stepData.price };
@@ -136,7 +138,7 @@ export default function BusinessPage() {
             city: stepData.city,
             state: stepData.state,
             postalCode: stepData.postalCode,
-            country: stepData.country, // Country name from address details
+            country: stepData.country,
           };
           break;
         case 7:
@@ -152,17 +154,13 @@ export default function BusinessPage() {
           Object.assign(newData, stepData);
       }
   
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
-      }
+      sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
       return newData;
     });
   
     setCurrentStep((prev) => {
       const newStep = prev + 1;
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("businessRegistrationStep", newStep.toString());
-      }
+      sessionStorage.setItem("businessRegistrationStep", newStep.toString());
       return newStep;
     });
   };
@@ -173,9 +171,7 @@ export default function BusinessPage() {
     } else {
       setCurrentStep((prev) => {
         const newStep = prev - 1;
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("businessRegistrationStep", newStep.toString());
-        }
+        sessionStorage.setItem("businessRegistrationStep", newStep.toString());
         return newStep;
       });
     }
@@ -183,19 +179,31 @@ export default function BusinessPage() {
 
   const handleEdit = (step: number) => {
     setCurrentStep(step);
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("businessRegistrationStep", step.toString());
-    }
+    sessionStorage.setItem("businessRegistrationStep", step.toString());
   };
 
-  const handlePaymentComplete = (details: { method: string; receiptUrl?: string; businessId: string }) => {
-    setHasRegisteredBusiness(true);
-    setCurrentStep(8);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("businessRegistrationData");
-      sessionStorage.removeItem("businessRegistrationStep");
+  const handlePaymentComplete = async (details: { method: string; receiptUrl?: string; businessId: string }) => {
+    if (user?.uid) {
+      try {
+        const businesses = await getBusinesses(user.uid);
+        setExistingBusinesses(businesses);
+      } catch (error) {
+        console.error("Error fetching businesses:", error);
+      }
     }
-    console.log("Business registered with ID:", details.businessId);
+    
+    sessionStorage.removeItem("businessRegistrationData");
+    sessionStorage.removeItem("businessRegistrationStep");
+    router.push("/dashboard/business");
+  };
+
+  const handleCancelRegistration = () => {
+    sessionStorage.removeItem("businessRegistrationData");
+    sessionStorage.removeItem("businessRegistrationStep");
+    setCurrentStep(1);  // Reset to first step
+    setFormData({});     // Clear form data
+    setShowRegistration(false);
+    router.push("/dashboard/business");
   };
 
   const renderRegistrationStep = () => {
@@ -247,80 +255,59 @@ export default function BusinessPage() {
     }
   };
 
-  const renderBusinessDashboard = () => {
-    if (!hasRegisteredBusiness) {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Register Your Business
-            </CardTitle>
-            <CardDescription>Start your business journey by registering your company with us.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              Registering your business is the first step towards growth and success. Our streamlined process makes it
-              easy to get started.
-            </p>
-            <Button
-              onClick={() => router.push("/dashboard/business?register=true")}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-            >
-              <Building className="mr-2 h-4 w-4" />
-              Start Business Registration
-            </Button>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Business Overview
-            </CardTitle>
-            <CardDescription>Key information about your registered business</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {formData.company && (
-                <div>
-                  <h3 className="font-medium text-gray-900">{formData.company.name}</h3>
-                  <p className="text-gray-500">Type: {formData.company.type}</p>
-                  <p className="text-gray-500">Industry: {formData.company.industry}</p>
-                </div>
-              )}
-              {formData.owner && formData.owner.length > 0 && (
-                <div>
-                  <h3 className="font-medium text-gray-900">Ownership Structure</h3>
-                  <div className="mt-2 space-y-2">
-                    {formData.owner.map((owner) => (
-                      <p key={owner.id} className="text-gray-500">
-                        {owner.fullName} - {owner.ownership}%{owner.isCEO && " (CEO)"}
+  const renderBusinessDashboard = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Your Businesses
+          </CardTitle>
+          <CardDescription>Manage your registered businesses</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {existingBusinesses.map((business) => (
+              <Card key={business.id} className="mb-4">
+                <CardContent className="pt-4">
+                  <h3 className="font-medium text-lg">{business.company?.name}</h3>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Type: {business.company?.type}</p>
+                      <p className="text-sm text-gray-500">Industry: {business.company?.industry}</p>
+                      <p className="text-sm text-gray-500">
+                        Registered: {business.createdAt?.toDate().toLocaleDateString()}
                       </p>
-                    ))}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Status: {business.paymentDetails?.status}</p>
+                      <p className="text-sm text-gray-500">
+                        Amount: ${(business.paymentDetails?.amount / 100).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        Payment ID: {business.paymentDetails?.stripePaymentIntentId}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {formData.paymentDetails && (
-                <div>
-                  <h3 className="font-medium text-gray-900">Payment Information</h3>
-                  <p className="text-gray-500">Amount: ${formData.paymentDetails.amount / 100}</p>
-                  <p className="text-gray-500">Currency: {formData.paymentDetails.currency.toUpperCase()}</p>
-                  <p className="text-gray-500">Status: {formData.paymentDetails.status}</p>
-                  <p className="text-gray-500">
-                    Date: {new Date(formData.paymentDetails.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          <Button
+          onClick={() => {
+            sessionStorage.removeItem("businessRegistrationData");
+            sessionStorage.removeItem("businessRegistrationStep");
+            router.push("/dashboard/business?register=true");
+          }}
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 mt-4"
+        >
+          <Building className="mr-2 h-4 w-4" />
+          Register Another Business
+        </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -337,11 +324,20 @@ export default function BusinessPage() {
       <div className="space-y-6">
         {showRegistration ? (
           <>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Business Registration
-              </h1>
-              <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Business Registration
+                </h1>
+                <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleCancelRegistration}
+                className="text-gray-600 hover:bg-gray-50"
+              >
+                Cancel Registration
+              </Button>
             </div>
 
             <Card>

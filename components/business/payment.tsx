@@ -50,6 +50,9 @@ export function Payment({ amount, businessData, onPaymentComplete }: PaymentProp
 
       if (error) {
         console.error("Stripe checkout error:", error);
+      } else {
+        sessionStorage.removeItem("businessRegistrationData");
+        sessionStorage.removeItem("businessRegistrationStep");
       }
     } catch (error) {
       console.error("Error initiating payment:", error);

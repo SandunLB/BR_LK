@@ -13,6 +13,7 @@ import { OwnerInformation } from "@/components/business/owner-information";
 import { AddressDetails } from "@/components/business/address-details";
 import { Review } from "@/components/business/review";
 import { Payment } from "@/components/business/payment";
+import { PaymentStatus } from "@/components/business/payment-status";
 import { Building, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getBusinesses } from "@/utils/firebase";
@@ -36,13 +37,6 @@ interface FormData {
     postalCode: string;
     country: string;
   };
-  paymentDetails?: {
-    amount: number;
-    currency: string;
-    status: string;
-    createdAt: string;
-    stripePaymentIntentId: string;
-  };
 }
 
 const steps = [
@@ -53,7 +47,6 @@ const steps = [
   { id: 5, name: "Address", description: "Address details" },
   { id: 6, name: "Review", description: "Review details" },
   { id: 7, name: "Payment", description: "Complete payment" },
-  { id: 8, name: "Complete", description: "Registration complete" },
 ];
 
 export default function BusinessPage() {
@@ -66,6 +59,7 @@ export default function BusinessPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
+  // Fetch existing businesses
   useEffect(() => {
     const fetchBusinesses = async () => {
       if (user?.uid) {
@@ -77,25 +71,34 @@ export default function BusinessPage() {
         }
       }
     };
-
     fetchBusinesses();
   }, [user]);
 
+  // Initialize registration data
   useEffect(() => {
     const initializeData = () => {
       if (typeof window !== "undefined") {
+        // Handle payment errors
+        const paymentError = searchParams.get("payment_error");
+        if (paymentError) {
+          alert(`Payment failed: ${paymentError}`);
+          router.replace("/dashboard/business");
+        }
+
+        // Check for existing registration data
         const savedStep = sessionStorage.getItem("businessRegistrationStep");
         const savedData = sessionStorage.getItem("businessRegistrationData");
         const registerParam = searchParams.get("register");
 
-        if (savedStep) {
-          setCurrentStep(Number.parseInt(savedStep, 10));
+        // Clear data if coming back from success page
+        if (searchParams.has("clean")) {
+          sessionStorage.removeItem("businessRegistrationData");
+          sessionStorage.removeItem("businessRegistrationStep");
         }
 
-        if (savedData) {
-          setFormData(JSON.parse(savedData));
-        }
-
+        // Initialize state
+        if (savedStep) setCurrentStep(Number(savedStep));
+        if (savedData) setFormData(JSON.parse(savedData));
         setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
       }
       setIsLoading(false);
@@ -104,60 +107,39 @@ export default function BusinessPage() {
     initializeData();
   }, [router, searchParams]);
 
+  // Handle step progression
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
       const newData = { ...prev };
-  
       switch (currentStep) {
-        case 1:
-          newData.country = { name: stepData.name };
-          break;
-        case 2:
-          newData.package = { name: stepData.name, price: stepData.price };
-          break;
-        case 3:
-          newData.company = {
-            name: stepData.name,
-            type: stepData.type,
-            industry: stepData.industry,
-          };
-          break;
-        case 4:
-          newData.owner = stepData.map((owner: any) => ({
-            id: owner.id,
-            fullName: owner.fullName,
-            ownership: owner.ownership,
-            isCEO: owner.isCEO,
-            birthDate: owner.birthDate,
-            document: owner.document,
-          }));
-          break;
-        case 5:
-          newData.address = {
-            street: stepData.street,
-            city: stepData.city,
-            state: stepData.state,
-            postalCode: stepData.postalCode,
-            country: stepData.country,
-          };
-          break;
-        case 7:
-          newData.paymentDetails = {
-            amount: stepData.amount,
-            currency: stepData.currency,
-            status: "paid",
-            createdAt: new Date().toISOString(),
-            stripePaymentIntentId: stepData.stripePaymentIntentId,
-          };
-          break;
-        default:
-          Object.assign(newData, stepData);
+        case 1: newData.country = { name: stepData.name }; break;
+        case 2: newData.package = { name: stepData.name, price: stepData.price }; break;
+        case 3: newData.company = { 
+          name: stepData.name, 
+          type: stepData.type, 
+          industry: stepData.industry 
+        }; break;
+        case 4: newData.owner = stepData.map((owner: any) => ({
+          id: owner.id,
+          fullName: owner.fullName,
+          ownership: owner.ownership,
+          isCEO: owner.isCEO,
+          birthDate: owner.birthDate,
+          document: owner.document,
+        })); break;
+        case 5: newData.address = {
+          street: stepData.street,
+          city: stepData.city,
+          state: stepData.state,
+          postalCode: stepData.postalCode,
+          country: stepData.country,
+        }; break;
+        default: break;
       }
-  
       sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
       return newData;
     });
-  
+
     setCurrentStep((prev) => {
       const newStep = prev + 1;
       sessionStorage.setItem("businessRegistrationStep", newStep.toString());
@@ -165,6 +147,7 @@ export default function BusinessPage() {
     });
   };
 
+  // Handle back navigation
   const handleBack = () => {
     if (currentStep === 1) {
       router.push("/dashboard/business");
@@ -177,84 +160,44 @@ export default function BusinessPage() {
     }
   };
 
+  // Handle step editing
   const handleEdit = (step: number) => {
     setCurrentStep(step);
     sessionStorage.setItem("businessRegistrationStep", step.toString());
   };
 
-  const handlePaymentComplete = async (details: { method: string; receiptUrl?: string; businessId: string }) => {
-    if (user?.uid) {
-      try {
-        const businesses = await getBusinesses(user.uid);
-        setExistingBusinesses(businesses);
-      } catch (error) {
-        console.error("Error fetching businesses:", error);
-      }
-    }
-    
-    sessionStorage.removeItem("businessRegistrationData");
-    sessionStorage.removeItem("businessRegistrationStep");
-    router.push("/dashboard/business");
-  };
-
+  // Cancel registration
   const handleCancelRegistration = () => {
     sessionStorage.removeItem("businessRegistrationData");
     sessionStorage.removeItem("businessRegistrationStep");
-    setCurrentStep(1);  // Reset to first step
-    setFormData({});     // Clear form data
+    setCurrentStep(1);
+    setFormData({});
     setShowRegistration(false);
     router.push("/dashboard/business");
   };
 
+  // Render current step
   const renderRegistrationStep = () => {
     switch (currentStep) {
-      case 1:
-        return <CountrySelection onNext={handleNext} initialData={formData.country} />;
-      case 2:
-        return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
-      case 3:
-        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />;
-      case 4:
-        return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
-      case 5:
-        return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />;
-      case 6:
-        return (
-          <Review
-            data={formData as Required<FormData>}
-            onNext={() => setCurrentStep(7)}
-            onBack={handleBack}
-            onEdit={handleEdit}
-          />
-        );
-      case 7:
-        return (
-          <Payment
-            onPaymentComplete={handlePaymentComplete}
-            amount={formData.package?.price || 0}
-            businessData={formData}
-          />
-        );
-      case 8:
-        return (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Registration Complete!
-            </h2>
-            <p className="text-gray-600 mb-6">Thank you for registering your business with us.</p>
-            <Button
-              onClick={() => router.push("/dashboard/business")}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-            >
-              Go to Business Dashboard
-            </Button>
-          </div>
-        );
-      default:
-        return null;
+      case 1: return <CountrySelection onNext={handleNext} initialData={formData.country} />;
+      case 2: return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
+      case 3: return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />;
+      case 4: return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
+      case 5: return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />;
+      case 6: return (
+        <Review
+          data={formData as Required<FormData>}
+          onNext={() => setCurrentStep(7)}
+          onBack={handleBack}
+          onEdit={handleEdit}
+        />
+      );
+      case 7: return <Payment amount={formData.package?.price || 0} businessData={formData} />;
+      default: return null;
     }
   };
 
+  // Render business dashboard
   const renderBusinessDashboard = () => (
     <div className="space-y-6">
       <Card>
@@ -269,46 +212,35 @@ export default function BusinessPage() {
             {existingBusinesses.map((business) => (
               <Card key={business.id} className="mb-4">
                 <CardContent className="pt-4">
-                  <h3 className="font-medium text-lg">{business.company?.name}</h3>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    <div>
-                      <p className="text-sm text-gray-500">Type: {business.company?.type}</p>
-                      <p className="text-sm text-gray-500">Industry: {business.company?.industry}</p>
-                      <p className="text-sm text-gray-500">
-                        Registered: {business.createdAt?.toDate().toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Status: {business.paymentDetails?.status}</p>
-                      <p className="text-sm text-gray-500">
-                        Amount: ${(business.paymentDetails?.amount / 100).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        Payment ID: {business.paymentDetails?.stripePaymentIntentId}
-                      </p>
-                    </div>
-                  </div>
+                  <h3 className="font-medium text-lg mb-2">{business.company?.name}</h3>
+                  <PaymentStatus
+                    status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
+                    amount={business.paymentDetails?.amount || 0}
+                    paymentId={business.paymentDetails?.stripePaymentIntentId}
+                    timestamp={business.paymentDetails?.createdAt?.toDate().toISOString()}
+                  />
                 </CardContent>
               </Card>
             ))}
           </div>
           
           <Button
-          onClick={() => {
-            sessionStorage.removeItem("businessRegistrationData");
-            sessionStorage.removeItem("businessRegistrationStep");
-            router.push("/dashboard/business?register=true");
-          }}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 mt-4"
-        >
-          <Building className="mr-2 h-4 w-4" />
-          Register Another Business
-        </Button>
+            onClick={() => {
+              sessionStorage.removeItem("businessRegistrationData");
+              sessionStorage.removeItem("businessRegistrationStep");
+              router.push("/dashboard/business?register=true");
+            }}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 mt-4"
+          >
+            <Building className="mr-2 h-4 w-4" />
+            Register New Business
+          </Button>
         </CardContent>
       </Card>
     </div>
   );
 
+  // Loading state
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -319,6 +251,7 @@ export default function BusinessPage() {
     );
   }
 
+  // Main render
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -343,7 +276,9 @@ export default function BusinessPage() {
             <Card>
               <CardContent className="pt-6">
                 <Stepper steps={steps} currentStep={currentStep} />
-                <div className="mt-8">{renderRegistrationStep()}</div>
+                <div className="mt-8">
+                  {renderRegistrationStep()}
+                </div>
               </CardContent>
             </Card>
           </>
@@ -351,9 +286,9 @@ export default function BusinessPage() {
           <>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                My Business
+                Business Dashboard
               </h1>
-              <p className="text-gray-500 mt-2">Manage and overview your business details.</p>
+              <p className="text-gray-500 mt-2">Manage your registered businesses</p>
             </div>
             {renderBusinessDashboard()}
           </>

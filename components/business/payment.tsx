@@ -1,7 +1,10 @@
+"use client";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreditCard, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -10,52 +13,43 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 interface PaymentProps {
   amount: number;
   businessData: any;
-  onPaymentComplete: (details: { method: string; receiptUrl?: string; businessId: string }) => void;
 }
 
-export function Payment({ amount, businessData, onPaymentComplete }: PaymentProps) {
+export function Payment({ amount, businessData }: PaymentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
 
   const handlePayment = async () => {
-    if (!user) {
-      console.error("User not logged in");
-      return;
-    }
+    if (!user) return;
 
     setIsLoading(true);
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount,
-          businessData: {
-            ...businessData,
-            userId: user.uid,
-          },
+          businessData: { ...businessData, userId: user.uid }
         }),
       });
 
       const { sessionId } = await response.json();
       const stripe = await stripePromise;
 
-      if (!stripe) {
-        throw new Error("Stripe failed to initialize");
-      }
-
+      if (!stripe) throw new Error("Stripe failed to initialize");
+      
+      localStorage.setItem("currentStripeSession", sessionId);
       const { error } = await stripe.redirectToCheckout({ sessionId });
 
       if (error) {
-        console.error("Stripe checkout error:", error);
-      } else {
-        sessionStorage.removeItem("businessRegistrationData");
-        sessionStorage.removeItem("businessRegistrationStep");
+        localStorage.removeItem("currentStripeSession");
+        router.push("/dashboard/business?payment_error=checkout_failed");
       }
+
     } catch (error) {
-      console.error("Error initiating payment:", error);
+      console.error("Payment failed:", error);
+      router.push("/dashboard/business?payment_error=processing_failed");
     } finally {
       setIsLoading(false);
     }
@@ -65,9 +59,9 @@ export function Payment({ amount, businessData, onPaymentComplete }: PaymentProp
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="text-center">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          Complete Your Payment
+          Complete Payment
         </h2>
-        <p className="text-gray-500 mt-2">Securely process your payment to finalize your business registration.</p>
+        <p className="text-gray-500 mt-2">Secure payment processing via Stripe</p>
       </div>
 
       <Card className="border-2 border-indigo-600 bg-gradient-to-r from-indigo-50 to-purple-50">
@@ -83,10 +77,13 @@ export function Payment({ amount, businessData, onPaymentComplete }: PaymentProp
       <Button
         onClick={handlePayment}
         disabled={isLoading}
-        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 relative"
       >
+        {isLoading && (
+          <Loader2 className="h-4 w-4 animate-spin absolute left-4" />
+        )}
         {isLoading ? (
-          "Processing..."
+          <span className="ml-2">Processing...</span>
         ) : (
           <>
             <CreditCard className="mr-2 h-4 w-4" />

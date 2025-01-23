@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -68,7 +68,6 @@ export default function SuccessPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    // Clear registration data
     window.sessionStorage.removeItem("businessRegistrationData");
     window.sessionStorage.removeItem("businessRegistrationStep");
     window.localStorage.removeItem("currentStripeSession");
@@ -78,7 +77,7 @@ export default function SuccessPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -87,15 +86,17 @@ export default function SuccessPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="max-w-2xl mx-auto text-center space-y-6 p-4">
+        <div className="max-w-2xl mx-auto text-center space-y-8 p-4">
           <div className="text-red-500">
             <CheckCircledIcon className="h-20 w-20 mx-auto mb-4" />
           </div>
-          <h1 className="text-3xl font-bold text-red-600">Payment Verification Failed</h1>
-          <p className="text-gray-600">{error}</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+            Payment Verification Failed
+          </h1>
+          <p className="text-gray-500">{error}</p>
           <Button
             onClick={() => router.push("/dashboard/business")}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
           >
             Return to Dashboard
           </Button>
@@ -106,43 +107,63 @@ export default function SuccessPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto text-center space-y-6 p-4">
-        <CheckCircledIcon className="h-20 w-20 text-green-500 mx-auto mb-4 animate-pulse" />
-        
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-          Registration Successful!
-        </h1>
+      <div className="max-w-2xl mx-auto space-y-8 p-4">
+        <div className="text-center space-y-4">
+          <CheckCircledIcon className="h-20 w-20 text-indigo-600 mx-auto mb-4 animate-pulse" />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Registration Successful!
+          </h1>
+          <p className="text-gray-500 mt-2">Your business is now officially registered with us.</p>
+        </div>
 
         {paymentDetails && (
-          <div className="space-y-2 bg-gray-50 p-4 rounded-lg border border-green-100 text-left">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Amount Paid:</span>
-              <span className="font-semibold text-green-600">
-                {paymentDetails.amount?.toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: paymentDetails.currency || 'USD'
-                })}
-              </span>
-            </div>
-            
-            <div className="flex justify-between">
-              <span className="text-gray-600">Transaction ID:</span>
-              <span className="font-mono text-green-600">{paymentDetails.paymentId}</span>
-            </div>
-            
-            <div className="flex justify-between">
-              <span className="text-gray-600">Date:</span>
-              <span className="text-green-600">{paymentDetails.date}</span>
-            </div>
-          </div>
+          <Card className="border border-indigo-100 hover:shadow-md transition-all">
+            <CardHeader>
+              <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Payment Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                <span className="text-gray-500">Amount Paid:</span>
+                <span className="font-semibold text-indigo-600">
+                  {paymentDetails.amount?.toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: paymentDetails.currency || 'USD'
+                  })}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                <span className="text-gray-500">Transaction ID:</span>
+                <span className="font-mono text-indigo-600">{paymentDetails.paymentId}</span>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                <span className="text-gray-500">Date:</span>
+                <span className="text-indigo-600">{paymentDetails.date}</span>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <Button
-          onClick={() => router.push("/dashboard/business")}
-          className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-        >
-          Return to Business Dashboard
-        </Button>
+        <div className="space-y-4">
+          <Button
+            onClick={() => router.push("/dashboard/business")}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white w-full"
+          >
+            Go to Business Dashboard
+          </Button>
+          
+          <div className="text-center text-sm text-gray-500">
+            <p>
+              Need assistance? Contact our support team at{" "}
+              <a href="mailto:support@business.com" className="text-indigo-600 hover:underline">
+                support@business.com
+              </a>
+            </p>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

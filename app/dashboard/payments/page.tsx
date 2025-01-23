@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Loader2 } from "lucide-react";
 import { getBusinesses } from "@/utils/firebase";
 import { PaymentStatus } from "@/components/business/payment-status";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 export default function PaymentsPage() {
   const router = useRouter();
@@ -54,75 +56,99 @@ export default function PaymentsPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Payment History
           </h1>
-          <p className="text-gray-500 mt-2">View payment details for all your registered businesses</p>
+          <p className="text-gray-500 mt-2">Detailed payment records for all your businesses</p>
         </div>
 
-        <Card>
-          <CardContent className="p-6 space-y-6">
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-6">
             {businesses.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                No registered businesses found.
+                No payment records found.
               </div>
             ) : (
-              businesses.map((business) => (
-                <Card key={business.id} className="mb-6 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between border-b pb-4 mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-800">
-                          {business.company?.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Registered on: {new Date(business.createdAt?.toDate()).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
-                        {business.package?.name}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium text-gray-700 mb-3">Business Details</h4>
-                        <dl className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <dt className="text-gray-600">Country</dt>
-                            <dd className="text-gray-800">{business.country?.name}</dd>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Business</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Date</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Amount</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Payment Method</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {businesses.map((business) => (
+                      <tr 
+                        key={business.id} 
+                        className="hover:bg-gray-50 transition-colors group"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <Building className="h-5 w-5 text-indigo-600" />
+                            <div>
+                              <div className="font-medium text-gray-900">{business.company?.name}</div>
+                              <div className="text-sm text-gray-500">{business.package?.name}</div>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <dt className="text-gray-600">Industry</dt>
-                            <dd className="text-gray-800">{business.company?.industry}</dd>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {business.paymentDetails?.createdAt ? 
+                            format(new Date(business.paymentDetails.createdAt), "PPp") : 
+                            'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">
+                            {(business.paymentDetails?.amount / 100).toLocaleString('en-US', {
+                              style: 'currency',
+                              currency: business.paymentDetails?.currency?.toUpperCase() || 'USD'
+                            })}
                           </div>
-                        </dl>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-gray-700 mb-3">Payment Details</h4>
-                        <div className="space-y-2">
-                          <PaymentStatus
-                            status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
-                            amount={business.paymentDetails?.amount / 100 || 0}
-                            paymentId={business.paymentDetails?.stripePaymentIntentId}
-                            timestamp={business.paymentDetails?.createdAt}
-                          />
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Payment Method:</span>
-                            <span className="text-gray-800 capitalize">
-                              {business.paymentDetails?.paymentMethod || 'N/A'}
-                            </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge 
+                            variant={business.paymentDetails?.status === 'succeeded' ? 'success' : 'destructive'}
+                            className="flex items-center gap-1 w-fit"
+                          >
+                            {business.paymentDetails?.status === 'succeeded' ? (
+                              <>
+                                <span className="h-2 w-2 rounded-full bg-current" />
+                                Success
+                              </>
+                            ) : (
+                              <>
+                                <span className="h-2 w-2 rounded-full bg-current" />
+                                Failed
+                              </>
+                            )}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap capitalize">
+                          {business.paymentDetails?.paymentMethod || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <PaymentStatus
+                              status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
+                              amount={business.paymentDetails?.amount / 100 || 0}
+                              paymentId={business.paymentDetails?.stripePaymentIntentId}
+                              timestamp={business.paymentDetails?.createdAt}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* Implement receipt viewing */}}
+                            >
+                              Receipt
+                            </Button>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Currency:</span>
-                            <span className="text-gray-800">
-                              {business.paymentDetails?.currency?.toUpperCase() || 'USD'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>

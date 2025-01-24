@@ -15,15 +15,44 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(0); // Remaining time in seconds
   const emailInputRef = useRef<HTMLInputElement>(null);
 
-  // Focus on the email input when the page loads
+  // Load remaining time from localStorage on component mount
   useEffect(() => {
-    if (emailInputRef.current) {
-      emailInputRef.current.focus();
+    const savedTime = localStorage.getItem('resetPasswordTimer');
+    if (savedTime) {
+      const currentTime = Date.now();
+      const endTime = parseInt(savedTime, 10);
+      const timeLeft = Math.max(0, Math.floor((endTime - currentTime) / 1000));
+      setRemainingTime(timeLeft);
+
+      if (timeLeft > 0) {
+        const timer = setInterval(() => {
+          setRemainingTime((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(timer);
+      }
     }
   }, []);
+
+  // Update localStorage and start the countdown
+  const startTimer = (duration: number) => {
+    const endTime = Date.now() + duration * 1000;
+    localStorage.setItem('resetPasswordTimer', endTime.toString());
+    setRemainingTime(duration);
+
+    const timer = setInterval(() => {
+      setRemainingTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          localStorage.removeItem('resetPasswordTimer');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   // Validate email format
   const validateEmail = (email: string) => {
@@ -44,13 +73,13 @@ export default function ForgotPasswordPage() {
     }
 
     setIsLoading(true);
-    setIsButtonDisabled(true);
 
     try {
       await sendPasswordResetEmail(auth, email);
       setMessage(
         'Password reset email sent. Please check your inbox (and spam folder) for instructions. If you don’t receive an email within a few minutes, please try again.'
       );
+      startTimer(30); // Start 30-second timer
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
         setError('No account found with this email address.');
@@ -59,7 +88,6 @@ export default function ForgotPasswordPage() {
       }
     } finally {
       setIsLoading(false);
-      setTimeout(() => setIsButtonDisabled(false), 30000); // Disable button for 30 seconds
     }
   };
 
@@ -119,11 +147,13 @@ export default function ForgotPasswordPage() {
 
           <Button
             type="submit"
-            disabled={isLoading || isButtonDisabled}
+            disabled={isLoading || remainingTime > 0}
             className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-500"
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
+            ) : remainingTime > 0 ? (
+              `Resend in ${remainingTime}s`
             ) : (
               'Send Reset Email'
             )}

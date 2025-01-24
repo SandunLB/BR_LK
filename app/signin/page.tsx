@@ -26,30 +26,56 @@ export default function SignInPage() {
     return null;
   }
 
+  // Function to map Firebase error codes to user-friendly messages
+  const getErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please try again.';
+      case 'auth/user-not-found':
+        return 'No account found with this email address. Please sign up.';
+      case 'auth/wrong-password':
+        return 'Incorrect password. Please try again.';
+      case 'auth/too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'auth/invalid-email':
+        return 'Invalid email address. Please enter a valid email.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      default:
+        return 'An error occurred. Please try again.';
+    }
+  };
+
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-      setError(error.message);
+      const errorCode = error.code;
+      const errorMessage = getErrorMessage(errorCode);
+      setError(errorMessage);
     }
   };
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
+
     try {
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
     } catch (error: any) {
-      setError(error.message);
+      const errorCode = error.code;
+      const errorMessage = getErrorMessage(errorCode);
+      setError(errorMessage);
     }
   };
 
   return (
     <AuthLayout>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
@@ -61,7 +87,7 @@ export default function SignInPage() {
         </div>
 
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-red-50 text-red-500 p-4 rounded-lg text-sm font-medium"
@@ -72,7 +98,7 @@ export default function SignInPage() {
 
         <form onSubmit={handleEmailSignIn} className="space-y-5">
           <div className="space-y-4">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.00 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
@@ -85,7 +111,7 @@ export default function SignInPage() {
                 className="h-12 text-lg"
               />
             </motion.div>
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.00 }}
               transition={{ type: "spring", stiffness: 400 }}
               className="relative"

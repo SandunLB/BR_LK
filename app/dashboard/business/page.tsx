@@ -16,20 +16,24 @@ import { Payment } from "@/components/business/payment";
 import { PaymentStatus } from "@/components/business/payment-status";
 import { Building, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getBusinesses } from "@/utils/firebase";
+import { getBusinesses, deleteDocument } from "@/utils/firebase";
+
+interface Owner {
+  id: string;
+  fullName: string;
+  ownership: string;
+  isCEO?: boolean;
+  birthDate?: string;
+  document?: File | null;
+  documentUrl?: string;
+  documentName?: string;
+}
 
 interface FormData {
   country?: { name: string };
   package?: { name: string; price: number };
   company?: { name: string; type: string; industry: string };
-  owner?: Array<{
-    id: string;
-    fullName: string;
-    ownership: string;
-    isCEO?: boolean;
-    birthDate?: string;
-    document?: File | null;
-  }>;
+  owner?: Owner[];
   address?: {
     street: string;
     city: string;
@@ -59,7 +63,6 @@ export default function BusinessPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  // Fetch existing businesses
   useEffect(() => {
     const fetchBusinesses = async () => {
       if (user?.uid) {
@@ -68,6 +71,8 @@ export default function BusinessPage() {
           setExistingBusinesses(businesses);
         } catch (error) {
           console.error("Error fetching businesses:", error);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -78,28 +83,24 @@ export default function BusinessPage() {
   useEffect(() => {
     const initializeData = () => {
       if (typeof window !== "undefined") {
-        // Handle payment errors
         const paymentError = searchParams.get("payment_error");
         if (paymentError) {
           alert(`Payment failed: ${paymentError}`);
           router.replace("/dashboard/business");
         }
 
-        // Check for existing registration data
         const savedStep = sessionStorage.getItem("businessRegistrationStep");
         const savedData = sessionStorage.getItem("businessRegistrationData");
         const registerParam = searchParams.get("register");
 
-        // Clear data if coming back from success page
         if (searchParams.has("clean")) {
           sessionStorage.removeItem("businessRegistrationData");
           sessionStorage.removeItem("businessRegistrationStep");
+        } else {
+          if (savedStep) setCurrentStep(Number(savedStep));
+          if (savedData) setFormData(JSON.parse(savedData));
+          setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
         }
-
-        // Initialize state
-        if (savedStep) setCurrentStep(Number(savedStep));
-        if (savedData) setFormData(JSON.parse(savedData));
-        setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
       }
       setIsLoading(false);
     };
@@ -107,12 +108,10 @@ export default function BusinessPage() {
     initializeData();
   }, [router, searchParams]);
 
-  // Handle step progression
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
       const newData = { ...prev };
 
-      // Ensure all fields have default values
       switch (currentStep) {
         case 1:
           newData.country = { name: stepData.name || "" };
@@ -128,13 +127,14 @@ export default function BusinessPage() {
           };
           break;
         case 4:
-          newData.owner = stepData.map((owner: any) => ({
-            id: owner.id || "",
-            fullName: owner.fullName || "",
-            ownership: owner.ownership || "",
-            isCEO: owner.isCEO || false,
-            birthDate: owner.birthDate || null,
-            document: owner.document || null,
+          newData.owner = stepData.map((owner: Owner) => ({
+            id: owner.id,
+            fullName: owner.fullName,
+            ownership: owner.ownership,
+            isCEO: owner.isCEO,
+            birthDate: owner.birthDate,
+            documentUrl: owner.documentUrl,
+            documentName: owner.documentName,
           }));
           break;
         case 5:
@@ -145,8 +145,6 @@ export default function BusinessPage() {
             postalCode: stepData.postalCode || "",
             country: stepData.country || "",
           };
-          break;
-        default:
           break;
       }
 
@@ -161,10 +159,9 @@ export default function BusinessPage() {
     });
   };
 
-  // Handle back navigation
   const handleBack = () => {
     if (currentStep === 1) {
-      router.push("/dashboard/business");
+      handleCancelRegistration();
     } else {
       setCurrentStep((prev) => {
         const newStep = prev - 1;
@@ -174,23 +171,37 @@ export default function BusinessPage() {
     }
   };
 
-  // Handle step editing
   const handleEdit = (step: number) => {
     setCurrentStep(step);
     sessionStorage.setItem("businessRegistrationStep", step.toString());
   };
 
-  // Cancel registration
-  const handleCancelRegistration = () => {
-    sessionStorage.removeItem("businessRegistrationData");
-    sessionStorage.removeItem("businessRegistrationStep");
-    setCurrentStep(1);
-    setFormData({});
-    setShowRegistration(false);
-    router.push("/dashboard/business");
+  const handleCancelRegistration = async () => {
+    try {
+      // Clean up uploaded documents
+      if (formData.owner?.length) {
+        for (const owner of formData.owner) {
+          if (owner.documentUrl) {
+            try {
+              await deleteDocument(owner.documentUrl);
+            } catch (error) {
+              console.error("Error cleaning up document:", error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error during cleanup:", error);
+    } finally {
+      sessionStorage.removeItem("businessRegistrationData");
+      sessionStorage.removeItem("businessRegistrationStep");
+      setCurrentStep(1);
+      setFormData({});
+      setShowRegistration(false);
+      router.push("/dashboard/business");
+    }
   };
 
-  // Render current step
   const renderRegistrationStep = () => {
     switch (currentStep) {
       case 1:
@@ -219,7 +230,6 @@ export default function BusinessPage() {
     }
   };
 
-  // Render business dashboard
   const renderBusinessDashboard = () => (
     <div className="space-y-6">
       <Card>
@@ -319,18 +329,18 @@ export default function BusinessPage() {
 
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                           </svg>
                           Payment Details
                         </h4>
                         <div className="space-y-2">
-                        <PaymentStatus
-                          status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
-                          amount={business.paymentDetails?.amount || 0}
-                          paymentId={business.paymentDetails?.stripePaymentIntentId}
-                          timestamp={business.paymentDetails?.createdAt} // Pass the formatted string directly
-                        />
+                          <PaymentStatus
+                            status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
+                            amount={business.paymentDetails?.amount || 0}
+                            paymentId={business.paymentDetails?.stripePaymentIntentId}
+                            timestamp={business.paymentDetails?.createdAt}
+                          />
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Payment Method:</span>
                             <span className="text-gray-800 capitalize">{business.paymentDetails?.paymentMethod}</span>
@@ -364,7 +374,6 @@ export default function BusinessPage() {
     </div>
   );
 
-  // Loading state
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -375,7 +384,6 @@ export default function BusinessPage() {
     );
   }
 
-  // Main render
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -400,9 +408,7 @@ export default function BusinessPage() {
             <Card>
               <CardContent className="pt-6">
                 <Stepper steps={steps} currentStep={currentStep} />
-                <div className="mt-8">
-                  {renderRegistrationStep()}
-                </div>
+                <div className="mt-8">{renderRegistrationStep()}</div>
               </CardContent>
             </Card>
           </>

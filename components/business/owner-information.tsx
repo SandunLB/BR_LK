@@ -2,7 +2,9 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Trash2, FileUp } from "lucide-react"
+import { Plus, Trash2, FileUp, Loader2 } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { uploadDocument, deleteDocument } from "@/utils/firebase"
 
 interface Owner {
   id: string
@@ -11,6 +13,8 @@ interface Owner {
   isCEO?: boolean
   birthDate?: string
   document?: File | null
+  documentUrl?: string
+  documentName?: string
 }
 
 interface OwnerInformationProps {
@@ -22,10 +26,12 @@ interface OwnerInformationProps {
 export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformationProps) {
   const [owners, setOwners] = useState<Owner[]>(initialData || [{ id: "1", fullName: "", ownership: "" }])
   const [validationMessage, setValidationMessage] = useState<string>("")
+  const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({})
+  const { user } = useAuth()
 
   const addOwner = () => {
-    setOwners([
-      ...owners,
+    setOwners(prev => [
+      ...prev,
       {
         id: Date.now().toString(),
         fullName: "",
@@ -37,42 +43,92 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
 
   const removeOwner = (id: string) => {
     if (owners.length > 1) {
-      const ownerToRemove = owners.find((o) => o.id === id)
-      const updatedOwners = owners.filter((owner) => owner.id !== id)
+      setOwners(prev => {
+        const ownerToRemove = prev.find((o) => o.id === id)
+        const updatedOwners = prev.filter((owner) => owner.id !== id)
 
-      // If removing CEO, assign to first owner
-      if (ownerToRemove?.isCEO && updatedOwners.length > 0) {
-        updatedOwners[0].isCEO = true
-      }
+        if (ownerToRemove?.isCEO && updatedOwners.length > 0) {
+          updatedOwners[0].isCEO = true
+        }
 
-      setOwners(updatedOwners)
+        return updatedOwners
+      })
     }
   }
 
-  const updateOwner = (id: string, field: keyof Owner, value: string | boolean | File | null) => {
-    setOwners(
-      owners.map((owner) => {
+  const updateOwner = (id: string, field: keyof Owner, value: any) => {
+    setOwners(prev => prev.map(owner => {
+      if (owner.id === id) {
+        const updatedOwner = { ...owner }
+
+        if (field === "ownership") {
+          const numValue = value === "" ? "" : Math.min(100, Math.max(0, Number(value)))
+          updatedOwner[field] = numValue.toString()
+        } else if (field === "isCEO" && value === true) {
+          prev.forEach((o) => {
+            if (o.id !== id) o.isCEO = false
+          })
+          updatedOwner.isCEO = true
+        } else {
+          updatedOwner[field] = value
+        }
+
+        return updatedOwner
+      }
+      return owner
+    }))
+  }
+
+  const handleFileChange = async (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !user) return
+
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert("Please upload a file smaller than 5MB")
+      return
+    }
+
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload a PDF, JPG, or PNG file")
+      return
+    }
+
+    setUploadingFiles(prev => ({ ...prev, [id]: true }))
+
+    try {
+      const currentOwner = owners.find(owner => owner.id === id)
+      const currentDocumentUrl = currentOwner?.documentUrl
+
+      if (currentDocumentUrl) {
+        try {
+          await deleteDocument(currentDocumentUrl)
+        } catch (error) {
+          console.error("Error deleting old document:", error)
+        }
+      }
+
+      const documentUrl = await uploadDocument(user.uid, file)
+      
+      setOwners(prev => prev.map(owner => {
         if (owner.id === id) {
-          const updatedOwner = { ...owner }
-
-          if (field === "ownership") {
-            const numValue = value === "" ? "" : Math.min(100, Math.max(0, Number(value)))
-            updatedOwner[field] = numValue.toString()
-          } else if (field === "isCEO" && value === true) {
-            // Remove CEO status from all other owners
-            owners.forEach((o) => {
-              if (o.id !== id) o.isCEO = false
-            })
-            updatedOwner.isCEO = true
-          } else {
-            updatedOwner[field] = value as never
+          return {
+            ...owner,
+            document: file,
+            documentUrl: documentUrl,
+            documentName: file.name
           }
-
-          return updatedOwner
         }
         return owner
-      }),
-    )
+      }))
+
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      alert("There was an error uploading your file")
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [id]: false }))
+    }
   }
 
   const validateOwners = (): boolean => {
@@ -88,15 +144,18 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
       return false
     }
 
-    // Single owner validation
     if (owners.length === 1) {
       const owner = owners[0]
-      if (!owner.birthDate || !owner.document) {
-        setValidationMessage("Please complete all required information (birth date and identification document)")
+      if (!owner.birthDate) {
+        setValidationMessage("Please enter the birth date")
+        return false
+      }
+      
+      if (!owner.documentUrl) {
+        setValidationMessage("Please upload an identification document")
         return false
       }
     } else {
-      // Multiple owners - validate CEO
       const ceoCount = owners.filter((owner) => owner.isCEO).length
       if (ceoCount !== 1) {
         setValidationMessage("Please designate exactly one owner as CEO")
@@ -104,9 +163,16 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
       }
 
       const ceo = owners.find((owner) => owner.isCEO)
-      if (ceo && (!ceo.birthDate || !ceo.document)) {
-        setValidationMessage("Please complete all required CEO information (birth date and identification document)")
-        return false
+      if (ceo) {
+        if (!ceo.birthDate) {
+          setValidationMessage("Please enter the CEO's birth date")
+          return false
+        }
+        
+        if (!ceo.documentUrl) {
+          setValidationMessage("Please upload the CEO's identification document")
+          return false
+        }
       }
     }
 
@@ -119,11 +185,6 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
     if (validateOwners()) {
       onNext(owners)
     }
-  }
-
-  const handleFileChange = (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null
-    updateOwner(id, "document", file)
   }
 
   const getOwnershipStatus = () => {
@@ -202,7 +263,6 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
               />
             </div>
 
-            {/* Show personal info for single owner or CEO */}
             {(owners.length === 1 || owner.isCEO) && (
               <div className="space-y-4 pt-2 border-t">
                 <div className="space-y-2">
@@ -228,21 +288,45 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
                   <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex items-center space-x-2">
                       <Input
-                        required
+                        required={!owner.documentUrl}
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png"
                         onChange={(e) => handleFileChange(owner.id, e)}
+                        disabled={uploadingFiles[owner.id]}
                         className="border-gray-200 focus:border-indigo-600 focus:ring-indigo-600"
                       />
-                      <FileUp className="h-5 w-5 text-gray-400" />
+                      {uploadingFiles[owner.id] ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+                      ) : (
+                        <FileUp className="h-5 w-5 text-gray-400" />
+                      )}
                     </div>
 
-                    <div className="mt-2 flex items-center text-xs text-gray-500">
+                    {owner.documentName && (
+                      <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
+                        <span>Current file: {owner.documentName}</span>
+                        {owner.documentUrl && (
+                          <a
+                            href={owner.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-700"
+                          >
+                            View
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                       <span className="flex items-center">
                         <span className="inline-block w-1.5 h-1.5 bg-indigo-600 rounded-full mr-1"></span>
-                        Accepted formats:
+                        Max size: 5MB
                       </span>
-                      <span className="ml-1 font-medium">PDF, JPG, JPEG, PNG</span>
+                      <span className="flex items-center">
+                        <span className="inline-block w-1.5 h-1.5 bg-indigo-600 rounded-full mr-1"></span>
+                        Accepted formats: PDF, JPG, PNG
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -274,7 +358,7 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
           </Button>
           <Button
             type="submit"
-            disabled={owners.some((owner) => !owner.fullName || !owner.ownership)}
+            disabled={owners.some((owner) => !owner.fullName || !owner.ownership) || Object.values(uploadingFiles).some(Boolean)}
             className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           >
             Continue
@@ -284,4 +368,3 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
     </div>
   )
 }
-

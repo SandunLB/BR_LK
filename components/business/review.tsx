@@ -22,6 +22,8 @@ interface ReviewProps {
       isCEO?: boolean
       birthDate?: string
       document?: File | null
+      documentUrl?: string
+      documentName?: string
     }>
     address: {
       street: string
@@ -206,12 +208,28 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
                           </div>
                           <div>
                             <dt className="text-sm font-medium text-gray-500">ID Document</dt>
-                            <dd className="mt-1 font-medium">
-                              {owner.document && owner.document.name
-                                ? owner.document.name.length > 25
-                                  ? owner.document.name.slice(0, 25) + "..." + owner.document.name.split(".").pop()
-                                  : owner.document.name
-                                : "Not provided"}
+                            <dd className="mt-1 font-medium flex items-center gap-2">
+                              {owner.documentName ? (
+                                <>
+                                  <span>
+                                    {owner.documentName.length > 25
+                                      ? owner.documentName.slice(0, 25) + "..." + owner.documentName.split(".").pop()
+                                      : owner.documentName}
+                                  </span>
+                                  {owner.documentUrl && (
+                                    <a
+                                      href={owner.documentUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-indigo-600 hover:text-indigo-700 text-sm"
+                                    >
+                                      View
+                                    </a>
+                                  )}
+                                </>
+                              ) : (
+                                "Not provided"
+                              )}
                             </dd>
                           </div>
                         </>
@@ -282,4 +300,3 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
     </div>
   )
 }
-

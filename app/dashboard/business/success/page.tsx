@@ -6,12 +6,14 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getBusinessDraft } from "@/utils/firebase";
 
 export default function SuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [paymentDetails, setPaymentDetails] = useState<{
     businessId?: string;
+    userId?: string;
     amount?: number;
     currency?: string;
     paymentId?: string;
@@ -23,7 +25,6 @@ export default function SuccessPage() {
   useEffect(() => {
     const verifyPayment = async () => {
       const sessionId = searchParams.get("session_id");
-      
       if (!sessionId) {
         setError("Invalid session ID");
         setLoading(false);
@@ -37,14 +38,18 @@ export default function SuccessPage() {
           body: JSON.stringify({ sessionId }),
         });
 
-        if (!response.ok) {
-          throw new Error("Payment verification failed");
-        }
+        if (!response.ok) throw new Error("Payment verification failed");
 
         const result = await response.json();
         
+        const businessData = await getBusinessDraft(
+          result.userId,
+          result.businessId
+        );
+
         setPaymentDetails({
           businessId: result.businessId,
+          userId: result.userId,
           amount: result.amount / 100,
           currency: result.currency,
           paymentId: result.stripePaymentIntentId,

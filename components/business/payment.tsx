@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { loadStripe } from "@stripe/stripe-js";
+import { saveBusinessDraft } from "@/utils/firebase";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -25,14 +26,19 @@ export function Payment({ amount, businessData }: PaymentProps) {
 
     setIsLoading(true);
     try {
+      const businessId = await saveBusinessDraft(user.uid, businessData);
+
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount,
-          businessData: { ...businessData, userId: user.uid }
+          businessId,
+          userId: user.uid
         }),
       });
+
+      if (!response.ok) throw new Error("Failed to create checkout session");
 
       const { sessionId } = await response.json();
       const stripe = await stripePromise;

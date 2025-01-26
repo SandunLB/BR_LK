@@ -111,31 +111,45 @@ export default function BusinessPage() {
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
       const newData = { ...prev };
+
+      // Ensure all fields have default values
       switch (currentStep) {
-        case 1: newData.country = { name: stepData.name }; break;
-        case 2: newData.package = { name: stepData.name, price: stepData.price }; break;
-        case 3: newData.company = { 
-          name: stepData.name, 
-          type: stepData.type, 
-          industry: stepData.industry 
-        }; break;
-        case 4: newData.owner = stepData.map((owner: any) => ({
-          id: owner.id,
-          fullName: owner.fullName,
-          ownership: owner.ownership,
-          isCEO: owner.isCEO,
-          birthDate: owner.birthDate,
-          document: owner.document,
-        })); break;
-        case 5: newData.address = {
-          street: stepData.street,
-          city: stepData.city,
-          state: stepData.state,
-          postalCode: stepData.postalCode,
-          country: stepData.country,
-        }; break;
-        default: break;
+        case 1:
+          newData.country = { name: stepData.name || "" };
+          break;
+        case 2:
+          newData.package = { name: stepData.name || "", price: stepData.price || 0 };
+          break;
+        case 3:
+          newData.company = {
+            name: stepData.name || "",
+            type: stepData.type || "",
+            industry: stepData.industry || "",
+          };
+          break;
+        case 4:
+          newData.owner = stepData.map((owner: any) => ({
+            id: owner.id || "",
+            fullName: owner.fullName || "",
+            ownership: owner.ownership || "",
+            isCEO: owner.isCEO || false,
+            birthDate: owner.birthDate || null,
+            document: owner.document || null,
+          }));
+          break;
+        case 5:
+          newData.address = {
+            street: stepData.street || "",
+            city: stepData.city || "",
+            state: stepData.state || "",
+            postalCode: stepData.postalCode || "",
+            country: stepData.country || "",
+          };
+          break;
+        default:
+          break;
       }
+
       sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
       return newData;
     });
@@ -179,21 +193,29 @@ export default function BusinessPage() {
   // Render current step
   const renderRegistrationStep = () => {
     switch (currentStep) {
-      case 1: return <CountrySelection onNext={handleNext} initialData={formData.country} />;
-      case 2: return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
-      case 3: return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />;
-      case 4: return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
-      case 5: return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />;
-      case 6: return (
-        <Review
-          data={formData as Required<FormData>}
-          onNext={() => setCurrentStep(7)}
-          onBack={handleBack}
-          onEdit={handleEdit}
-        />
-      );
-      case 7: return <Payment amount={formData.package?.price || 0} businessData={formData} />;
-      default: return null;
+      case 1:
+        return <CountrySelection onNext={handleNext} initialData={formData.country} />;
+      case 2:
+        return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
+      case 3:
+        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />;
+      case 4:
+        return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
+      case 5:
+        return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />;
+      case 6:
+        return (
+          <Review
+            data={formData as Required<FormData>}
+            onNext={() => setCurrentStep(7)}
+            onBack={handleBack}
+            onEdit={handleEdit}
+          />
+        );
+      case 7:
+        return <Payment amount={formData.package?.price || 0} businessData={formData} />;
+      default:
+        return null;
     }
   };
 
@@ -227,7 +249,7 @@ export default function BusinessPage() {
                       {business.company?.type}
                     </span>
                   </div>
-  
+
                   {/* Main Details Grid */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column */}
@@ -252,7 +274,7 @@ export default function BusinessPage() {
                           </div>
                         </dl>
                       </div>
-  
+
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
@@ -267,7 +289,7 @@ export default function BusinessPage() {
                         </div>
                       </div>
                     </div>
-  
+
                     {/* Right Column */}
                     <div className="space-y-6">
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -283,8 +305,8 @@ export default function BusinessPage() {
                               <div>
                                 <p className="font-medium text-gray-800">{owner.fullName}</p>
                                 <p className="text-xs text-gray-500">
-                                  {owner.isCEO ? 'CEO • ' : ''}
-                                  {owner.birthDate || 'DOB not provided'}
+                                  {owner.isCEO ? "CEO • " : ""}
+                                  {owner.birthDate || "DOB not provided"}
                                 </p>
                               </div>
                               <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
@@ -294,7 +316,7 @@ export default function BusinessPage() {
                           ))}
                         </div>
                       </div>
-  
+
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
@@ -303,12 +325,12 @@ export default function BusinessPage() {
                           Payment Details
                         </h4>
                         <div className="space-y-2">
-                          <PaymentStatus
-                            status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
-                            amount={business.paymentDetails?.amount || 0}
-                            paymentId={business.paymentDetails?.stripePaymentIntentId}
-                            timestamp={business.paymentDetails?.createdAt?.toDate().toISOString()}
-                          />
+                        <PaymentStatus
+                          status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
+                          amount={business.paymentDetails?.amount || 0}
+                          paymentId={business.paymentDetails?.stripePaymentIntentId}
+                          timestamp={business.paymentDetails?.createdAt} // Pass the formatted string directly
+                        />
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Payment Method:</span>
                             <span className="text-gray-800 capitalize">{business.paymentDetails?.paymentMethod}</span>
@@ -325,7 +347,7 @@ export default function BusinessPage() {
               </Card>
             ))}
           </div>
-  
+
           <Button
             onClick={() => {
               sessionStorage.removeItem("businessRegistrationData");

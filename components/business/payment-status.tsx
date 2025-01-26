@@ -1,16 +1,16 @@
 "use client";
 
-import { 
+import {
   CheckCircledIcon,
   CrossCircledIcon,
-  ClockIcon 
+  ClockIcon
 } from "@radix-ui/react-icons";
 
 interface PaymentStatusProps {
   status: "pending" | "success" | "failed";
   amount: number;
   paymentId?: string;
-  timestamp?: string;
+  timestamp?: string; // Expect a formatted string
 }
 
 export function PaymentStatus({ status, amount, paymentId, timestamp }: PaymentStatusProps) {
@@ -24,23 +24,23 @@ export function PaymentStatus({ status, amount, paymentId, timestamp }: PaymentS
           Payment {status === "pending" ? "Pending" : status === "success" ? "Completed" : "Failed"}
         </h3>
       </div>
-      
+
       {paymentId && (
         <div className="text-sm">
           <span className="text-gray-500">Transaction ID:</span>{" "}
           <span className="font-mono text-gray-700">{paymentId}</span>
         </div>
       )}
-      
+
       {timestamp && (
         <div className="text-sm">
           <span className="text-gray-500">Processed:</span>{" "}
           <span className="text-gray-700">
-            {new Date(timestamp).toLocaleString()}
+            {timestamp} {/* Display the formatted string directly */}
           </span>
         </div>
       )}
-      
+
       <div className="text-sm">
         <span className="text-gray-500">Amount:</span>{" "}
         <span className="text-gray-700">${(amount / 100).toFixed(2)}</span>

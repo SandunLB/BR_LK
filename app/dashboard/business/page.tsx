@@ -16,7 +16,7 @@ import { Payment } from "@/components/business/payment";
 import { PaymentStatus } from "@/components/business/payment-status";
 import { Building, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getBusinesses, deleteDocument } from "@/utils/firebase";
+import { getBusinesses, deleteDocument, formatTimestamp } from "@/utils/firebase";
 
 interface Owner {
   id: string;

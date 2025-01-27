@@ -1,16 +1,18 @@
 "use client";
 
+import { Timestamp } from "firebase/firestore";
 import {
   CheckCircledIcon,
   CrossCircledIcon,
   ClockIcon
 } from "@radix-ui/react-icons";
+import { formatTimestamp } from "@/utils/firebase";
 
 interface PaymentStatusProps {
   status: "pending" | "success" | "failed";
   amount: number;
   paymentId?: string;
-  timestamp?: string; // Expect a formatted string
+  timestamp?: Timestamp | null;
 }
 
 export function PaymentStatus({ status, amount, paymentId, timestamp }: PaymentStatusProps) {
@@ -36,7 +38,7 @@ export function PaymentStatus({ status, amount, paymentId, timestamp }: PaymentS
         <div className="text-sm">
           <span className="text-gray-500">Processed:</span>{" "}
           <span className="text-gray-700">
-            {timestamp} {/* Display the formatted string directly */}
+            {formatTimestamp(timestamp)}
           </span>
         </div>
       )}

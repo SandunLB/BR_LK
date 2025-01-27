@@ -7,8 +7,7 @@ import {
   getDoc, 
   updateDoc,
   serverTimestamp,
-  Timestamp,
-  DocumentReference
+  Timestamp
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
@@ -50,23 +49,39 @@ interface PaymentDetails {
   currency: string;
   paymentMethod: string;
   status: string;
-  createdAt: string;
   stripePaymentIntentId: string;
 }
 
-// Utility function to format dates in UTC
-export function formatDate(date: Date | string): string {
-  const jsDate = new Date(date);
-  return jsDate.toLocaleString('en-US', {
+// Format Firestore timestamp for display
+export function formatTimestamp(timestamp: any): string {
+  if (!timestamp) return '';
+  
+  const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
-    timeZone: 'UTC',
-    timeZoneName: 'short',
-  });
+    hour12: true
+  };
+  
+  // If it's a Firestore Timestamp
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate().toLocaleString('en-US', options);
+  }
+  
+  // If it's a serialized timestamp (has seconds and nanoseconds)
+  if (timestamp.seconds && timestamp.nanoseconds) {
+    const date = new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+    return date.toLocaleString('en-US', options);
+  }
+  
+  // If it's a date object
+  if (timestamp instanceof Date) {
+    return timestamp.toLocaleString('en-US', options);
+  }
+
+  return '';
 }
 
 // Clean Firestore data by removing undefined values
@@ -105,7 +120,6 @@ export async function uploadDocument(userId: string, file: File): Promise<string
 // Delete a document from Firebase Storage
 export async function deleteDocument(documentUrl: string): Promise<void> {
   try {
-    // Extract the path from the URL
     const decodedUrl = decodeURIComponent(documentUrl);
     const urlParts = decodedUrl.split('/o/')[1].split('?')[0];
     const storageRef = ref(storage, urlParts);
@@ -147,15 +161,18 @@ export async function completeBusinessRegistration(
   try {
     const businessDocRef = doc(db, "users", userId, "businesses", businessId);
 
+    // Create a new Timestamp for immediate use
+    const now = Timestamp.now();
+
     const formattedPaymentDetails = {
       ...paymentDetails,
-      createdAt: formatDate(paymentDetails.createdAt)
+      createdAt: now // Use immediate timestamp for payment records
     };
 
     await updateDoc(businessDocRef, cleanFirestoreData({
       paymentDetails: formattedPaymentDetails,
       status: "completed",
-      updatedAt: serverTimestamp(),
+      updatedAt: now,
     }));
 
     return businessId;
@@ -218,11 +235,6 @@ export async function updateBusiness(
     console.error("Error updating business:", error);
     throw error;
   }
-}
-
-// Utility function to convert Firestore Timestamp to formatted date string
-export function convertTimestamp(timestamp: Timestamp): string {
-  return formatDate(timestamp.toDate());
 }
 
 // Utility function to get storage file path from URL

@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getBusinessDraft } from "@/utils/firebase";
+import { getBusinessDraft, formatTimestamp } from "@/utils/firebase";
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -53,13 +53,7 @@ export default function SuccessPage() {
           amount: result.amount / 100,
           currency: result.currency,
           paymentId: result.stripePaymentIntentId,
-          date: new Date(result.createdAt).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
+          date: formatTimestamp(businessData.paymentDetails?.createdAt)
         });
 
       } catch (err) {

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { getBusinesses } from "@/utils/firebase";
+import { getBusinesses, formatTimestamp } from "@/utils/firebase";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Copy, AlertCircle, Filter, ArrowUpDown } from "lucide-react";
@@ -54,13 +54,29 @@ export default function PaymentsPage() {
     navigator.clipboard.writeText(paymentId);
   };
 
+  const getTimestampMillis = (timestamp: any): number => {
+    if (!timestamp) return 0;
+    
+    // If it's a Firestore Timestamp
+    if (timestamp.toMillis) {
+      return timestamp.toMillis();
+    }
+    
+    // If it's a serialized timestamp (has seconds and nanoseconds)
+    if (timestamp.seconds) {
+      return timestamp.seconds * 1000 + Math.floor(timestamp.nanoseconds / 1000000);
+    }
+    
+    return 0;
+  };
+
   const sortedBusinesses = [...businesses].sort((a, b) => {
     if (!sortConfig) return 0;
     const key = sortConfig.key;
     
     if (key === 'date') {
-      const dateA = a.paymentDetails?.createdAt?.toDate().getTime() || 0;
-      const dateB = b.paymentDetails?.createdAt?.toDate().getTime() || 0;
+      const dateA = getTimestampMillis(a.paymentDetails?.createdAt);
+      const dateB = getTimestampMillis(b.paymentDetails?.createdAt);
       return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
     }
     
@@ -188,14 +204,7 @@ export default function PaymentsPage() {
                       <TableRow key={business.id} className="hover:bg-gray-50">
                         <TableCell>
                           <div className="font-medium">
-                            {new Date(business.paymentDetails?.createdAt?.toDate()).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {new Date(business.paymentDetails?.createdAt?.toDate()).toLocaleTimeString()}
+                            {formatTimestamp(business.paymentDetails?.createdAt)}
                           </div>
                         </TableCell>
                         <TableCell>

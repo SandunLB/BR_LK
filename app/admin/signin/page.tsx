@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function AdminSignIn() {
   const router = useRouter();
@@ -19,10 +20,27 @@ export default function AdminSignIn() {
     setIsLoading(true);
 
     try {
+      // First, sign in the user
       await signInWithEmailAndPassword(auth, email, password);
+      
+      // Then check if they're an admin
+      const adminDoc = await getDoc(doc(db, "admins", email));
+      
+      if (!adminDoc.exists() || adminDoc.data()?.role !== 'admin') {
+        // If not admin, show error and sign out
+        await signOut(auth);
+        setError("You are not authorized to access the admin panel.");
+        return;
+      }
+
+      // If they are an admin, redirect to admin dashboard
       router.push("/admin");
     } catch (error: any) {
-      setError(error.message);
+      setError(
+        error.code === 'auth/invalid-credential'
+          ? 'Invalid email or password'
+          : error.message
+      );
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +64,7 @@ export default function AdminSignIn() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -57,7 +75,7 @@ export default function AdminSignIn() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -65,7 +83,7 @@ export default function AdminSignIn() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">

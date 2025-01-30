@@ -3,10 +3,21 @@
 import { useState } from "react";
 import { Loader2, FileText, X } from "lucide-react";
 
+interface Business {
+  id: string;
+  userId: string;
+  documents?: {
+    [key: string]: {
+      url: string;
+      name: string;
+    };
+  };
+}
+
 interface EditBusinessProps {
-  business: any;
+  business: Business;
   onClose: () => void;
-  onUpdate: (updatedBusiness: any) => void;
+  onUpdate: (updatedBusiness: Business) => void;
 }
 
 export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
@@ -14,12 +25,13 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<{ [key: string]: File }>({});
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: boolean }>({});
+  const [currentBusiness, setCurrentBusiness] = useState<Business>(business);
 
   // Create an array of document slots (1 to 5)
   const documentSlots = [1, 2, 3, 4, 5].map(num => ({
     id: `doc${num}`,
     label: `Document ${num}`,
-    existingDoc: business.documents?.[`doc${num}`] || null
+    existingDoc: currentBusiness.documents?.[`doc${num}`] || null
   }));
 
   const handleFileSelect = (docNumber: string, file: File | null) => {
@@ -43,7 +55,7 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
       
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('userId', business.userId);
+      formData.append('userId', currentBusiness.userId);
       
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -57,7 +69,7 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
       const data = await response.json();
       return {
         url: data.url,
-        name: data.name
+        name: file.name
       };
     } catch (error) {
       console.error('Upload error:', error);
@@ -73,8 +85,8 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
     setError(null);
 
     try {
-      const documentUrls: { [key: string]: { url: string; name: string } } = {
-        ...(business.documents || {}) // Keep existing documents
+      const documentUrls = {
+        ...(currentBusiness.documents || {})
       };
 
       // Upload each new document
@@ -91,7 +103,7 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
 
       // Update business with all documents
       const response = await fetch(
-        `/api/businesses/${business.userId}/${business.id}`,
+        `/api/businesses/${currentBusiness.userId}/${currentBusiness.id}`,
         {
           method: 'PUT',
           headers: {
@@ -103,13 +115,59 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
         }
       );
 
-      if (!response.ok) throw new Error('Failed to update business');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update business');
+      }
 
       const result = await response.json();
+      
+      // Update local state before calling onUpdate
+      setCurrentBusiness(result.data);
       onUpdate(result.data);
+      
+      // Clear the documents state
+      setDocuments({});
+      
+      // Close the modal
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update business');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveExistingDocument = async (docNumber: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const updatedDocuments = { ...currentBusiness.documents };
+      delete updatedDocuments[docNumber];
+
+      const response = await fetch(
+        `/api/businesses/${currentBusiness.userId}/${currentBusiness.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            documents: updatedDocuments
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to remove document');
+      }
+
+      const result = await response.json();
+      setCurrentBusiness(result.data);
+      onUpdate(result.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove document');
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +181,7 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
+            disabled={isLoading}
           >
             <X className="w-6 h-6" />
           </button>
@@ -149,16 +208,24 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
 
                 {/* Existing Document */}
                 {slot.existingDoc && (
-                  <div className="mb-3 p-2 bg-gray-50 rounded text-sm">
+                  <div className="mb-3 p-2 bg-gray-50 rounded flex justify-between items-center">
                     <a
                       href={slot.existingDoc.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+                      className="text-blue-600 hover:text-blue-800 flex items-center gap-2 flex-1 min-w-0"
                     >
-                      <FileText className="w-4 h-4" />
+                      <FileText className="w-4 h-4 flex-shrink-0" />
                       <span className="truncate">{slot.existingDoc.name}</span>
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingDocument(slot.id)}
+                      className="ml-2 p-1 hover:bg-red-50 rounded-full text-red-500"
+                      disabled={isLoading}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
 
@@ -170,13 +237,16 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
                     className="hidden"
                     id={slot.id}
                     accept=".pdf,.doc,.docx,.txt"
+                    disabled={isLoading}
                   />
                   <label
                     htmlFor={slot.id}
-                    className="px-3 py-1.5 border rounded hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-sm"
+                    className={`px-3 py-1.5 border rounded hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-sm ${
+                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
                     <FileText className="w-4 h-4" />
-                    <span>Replace Document</span>
+                    <span>{slot.existingDoc ? 'Replace Document' : 'Upload Document'}</span>
                   </label>
                 </div>
 
@@ -190,6 +260,7 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
                       type="button"
                       onClick={() => removeDocument(slot.id)}
                       className="p-1 hover:bg-red-50 rounded-full text-red-500"
+                      disabled={isLoading}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -211,7 +282,8 @@ export function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps)
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded hover:bg-gray-50"
+              className="px-4 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
+              disabled={isLoading}
             >
               Cancel
             </button>

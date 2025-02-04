@@ -207,7 +207,7 @@ function BusinessContent() {
       case 2:
         return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
       case 3:
-        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} />;
+        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} country={formData.country?.name} />;
       case 4:
         return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
       case 5:

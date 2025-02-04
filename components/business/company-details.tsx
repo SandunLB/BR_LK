@@ -3,10 +3,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const companyTypes = [
-  { id: "llc", name: "Limited Liability Company (LLC)" },
-  { id: "l.l.c", name: "Limited Liability Company (L.L.C.)" },
-]
+const getCompanyTypes = (country?: string) => {
+  switch (country) {
+    case "United Kingdom":
+      return [
+        { id: "ltd", name: "Private Limited Company (LTD)" },
+        { id: "limited", name: "Public Limited Company (LIMITED)" },
+      ]
+    default:
+      return [
+        { id: "llc", name: "Limited Liability Company (LLC)" },
+        { id: "l.l.c", name: "Limited Liability Company (L.L.C.)" },
+      ]
+  }
+}
 
 const industries = [
   // Agriculture, Forestry, Fishing and Hunting
@@ -78,13 +88,16 @@ interface CompanyDetailsProps {
     type: string
     industry: string
   }
+  country?: string
 }
 
-export function CompanyDetails({ onNext, onBack, initialData }: CompanyDetailsProps) {
+export function CompanyDetails({ onNext, onBack, initialData, country }: CompanyDetailsProps) {
   const [name, setName] = useState(initialData?.name || "")
   const [type, setType] = useState(initialData?.type || "")
   const [industry, setIndustry] = useState(initialData?.industry || "")
   const [nameError, setNameError] = useState("")
+
+  const companyTypes = getCompanyTypes(country)
 
   const validateCompanyName = (value: string) => {
     // Regular expression to check for any symbols except '&'
@@ -184,4 +197,3 @@ export function CompanyDetails({ onNext, onBack, initialData }: CompanyDetailsPr
     </div>
   )
 }
-

@@ -1,20 +1,72 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Search, Edit, FileText, Eye, X } from "lucide-react";
+import { Loader2, Search, FileText, X } from "lucide-react";
 
-// Edit Business Component
+interface Document {
+  url: string;
+  name: string;
+}
+
+interface Owner {
+  id: string;
+  fullName: string;
+  ownership: number;
+  birthDate: string;
+  documentUrl?: string;
+  documentName?: string;
+}
+
+interface PaymentDetails {
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  status: string;
+  stripePaymentIntentId: string;
+}
+
+interface Business {
+  id: string;
+  userId: string;
+  userEmail: string;
+  status: 'completed' | 'draft';
+  company?: {
+    name: string;
+    type: string;
+    industry: string;
+  };
+  country?: {
+    name: string;
+  };
+  package?: {
+    name: string;
+    price: number;
+  };
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  paymentDetails?: PaymentDetails;
+  documents?: Record<string, Document>;
+  owner?: Owner[];
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
 interface EditBusinessProps {
-  business: any;
+  business: Business;
   onClose: () => void;
-  onUpdate: (updatedBusiness: any) => void;
+  onUpdate: (updatedBusiness: Business) => void;
 }
 
 function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [documents, setDocuments] = useState<{ [key: string]: File }>({});
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: boolean }>({});
+  const [documents, setDocuments] = useState<Record<string, File>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
 
   const handleFileSelect = (docNumber: string, file: File | null) => {
     if (file) {
@@ -37,7 +89,7 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
     setError(null);
 
     try {
-      const documentUrls: { [key: string]: { url: string; name: string } } = {};
+      const documentUrls: Record<string, Document> = {};
 
       for (const [docNumber, file] of Object.entries(documents)) {
         setUploadProgress(prev => ({ ...prev, [docNumber]: true }));
@@ -108,7 +160,6 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Upload New Documents */}
           <div>
             <h3 className="font-medium mb-4">Upload New Documents</h3>
             <div className="space-y-4">
@@ -156,12 +207,11 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
             </div>
           </div>
 
-          {/* Current Documents */}
           {business.documents && Object.keys(business.documents).length > 0 && (
             <div>
               <h3 className="font-medium mb-4">Current Documents</h3>
               <div className="space-y-2 bg-gray-50 p-4 rounded">
-                {Object.entries(business.documents).map(([key, value]: [string, any]) => (
+                {Object.entries(business.documents).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between py-2">
                     <span className="font-medium">{key}</span>
                     <a
@@ -208,14 +258,13 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
   );
 }
 
-// Main Business Page Component
 export default function BusinessesPage() {
-  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedBusinessForEdit, setSelectedBusinessForEdit] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'draft'>("all");
+  const [selectedBusinessForEdit, setSelectedBusinessForEdit] = useState<Business | null>(null);
 
   useEffect(() => {
     fetchBusinesses();
@@ -236,19 +285,20 @@ export default function BusinessesPage() {
     }
   };
 
-  const formatTimestamp = (timestamp: any) => {
+  const formatTimestamp = (timestamp: FirebaseFirestore.Timestamp | null) => {
     if (!timestamp) return 'N/A';
-    if (timestamp._methodName === 'serverTimestamp') return 'Pending...';
-    if (timestamp.seconds) {
+    
+    try {
       return new Date(timestamp.seconds * 1000).toLocaleString();
+    } catch (error) {
+      return 'Invalid Date';
     }
-    return 'Invalid Date';
   };
 
   const filteredBusinesses = businesses.filter(business => {
     const matchesSearch = 
       business.company?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      business.path?.toLowerCase().includes(searchTerm.toLowerCase());
+      business.id.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || business.status === statusFilter;
 
@@ -263,6 +313,18 @@ export default function BusinessesPage() {
     );
   }
 
+  // Add error handling UI
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="bg-red-100 text-red-600 p-4 rounded-lg max-w-xl text-center">
+          <p className="font-medium mb-2">Error loading businesses</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -271,7 +333,7 @@ export default function BusinessesPage() {
         <div className="flex space-x-4">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'completed' | 'draft')}
             className="border rounded-lg px-3 py-2"
           >
             <option value="all">All Statuses</option>
@@ -295,7 +357,6 @@ export default function BusinessesPage() {
       <div className="grid gap-6">
         {filteredBusinesses.map(business => (
           <div key={business.id} className="bg-white rounded-lg shadow-sm p-6">
-            {/* Business Header */}
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-xl font-bold">{business.company?.name}</h2>
@@ -320,9 +381,7 @@ export default function BusinessesPage() {
               </div>
             </div>
 
-            {/* Business Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Company & Package Info */}
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-2">Company Details</h3>
@@ -342,7 +401,6 @@ export default function BusinessesPage() {
                 </div>
               </div>
 
-              {/* Address */}
               <div>
                 <h3 className="font-semibold mb-2">Address</h3>
                 <div className="space-y-1 text-sm">
@@ -353,27 +411,25 @@ export default function BusinessesPage() {
                 </div>
               </div>
 
-              {/* Payment Details */}
               <div>
                 <h3 className="font-semibold mb-2">Payment Details</h3>
                 <div className="space-y-1 text-sm">
-                  <p>Amount: ${(business.paymentDetails?.amount / 100).toFixed(2)}</p>
+                  <p>Amount: ${(business.paymentDetails?.amount ?? 0 / 100).toFixed(2)}</p>
                   <p>Currency: {business.paymentDetails?.currency}</p>
                   <p>Method: {business.paymentDetails?.paymentMethod}</p>
                   <p>Status: {business.paymentDetails?.status}</p>
                   <p className="truncate">
                     ID: {business.paymentDetails?.stripePaymentIntentId}
-                  </p>
+                    </p>
                 </div>
               </div>
             </div>
 
-            {/* Documents Section */}
             {business.documents && Object.keys(business.documents).length > 0 && (
               <div className="mt-6 pt-6 border-t">
                 <h3 className="font-semibold mb-4">Documents</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(business.documents).map(([key, value]: [string, any]) => (
+                  {Object.entries(business.documents).map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                       <span className="font-medium text-sm">{key}</span>
                       <a
@@ -391,12 +447,11 @@ export default function BusinessesPage() {
               </div>
             )}
 
-            {/* Owners Section */}
             {business.owner && business.owner.length > 0 && (
               <div className="mt-6 pt-6 border-t">
                 <h3 className="font-semibold mb-4">Owners</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {business.owner.map((owner: any) => (
+                  {business.owner.map((owner) => (
                     <div key={owner.id} className="border rounded-lg p-4">
                       <div className="space-y-1 text-sm">
                         <p>Name: {owner.fullName}</p>
@@ -422,7 +477,6 @@ export default function BusinessesPage() {
               </div>
             )}
 
-            {/* Timestamps */}
             <div className="mt-6 pt-4 border-t text-sm text-gray-500">
               <div>Created: {formatTimestamp(business.createdAt)}</div>
               <div>Updated: {formatTimestamp(business.updatedAt)}</div>
@@ -431,7 +485,6 @@ export default function BusinessesPage() {
         ))}
       </div>
 
-      {/* Edit Business Modal */}
       {selectedBusinessForEdit && (
         <EditBusiness
           business={selectedBusinessForEdit}

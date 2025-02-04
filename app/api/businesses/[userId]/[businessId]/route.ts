@@ -69,7 +69,6 @@ export async function PUT(
       success: true,
       data: {
         id: updatedDoc.id,
-        userId,
         ...businessData,
       } as BusinessDocument,
     })

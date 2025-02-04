@@ -6,7 +6,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, CreditCard, MessageSquare, Briefcase, Users, Settings, LogOut } from 'lucide-react';
 import { Logo } from '@/components/auth/logo';
 import { useAuth } from '@/hooks/use-auth';
@@ -43,7 +43,6 @@ export function Sidebar() {
       {user && (
         <div className="flex items-center gap-4 p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
           <Avatar className="h-12 w-12 ring-2 ring-indigo-600/10">
-            <AvatarImage src={user.photoURL || undefined} />
             <AvatarFallback className="text-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
               {user.displayName?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>

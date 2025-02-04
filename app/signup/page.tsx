@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { parsePhoneNumberFromString, AsYouType, getExampleNumber } from 'libphonenumber-js/max';
+import { parsePhoneNumberFromString, AsYouType, getExampleNumber, CountryCode } from 'libphonenumber-js/max';
 import examples from 'libphonenumber-js/mobile/examples';
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -20,7 +20,7 @@ interface Country {
   code: string;
   name: string;
   flag: string;
-  countryCode: string;
+  countryCode: CountryCode;
   example?: string;
   format?: string;
 }
@@ -52,7 +52,7 @@ const UnifiedPhoneInput = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedCountry = countries.find(c => c.code === countryCode);
-  const asYouType = new AsYouType(selectedCountry?.countryCode);
+  const asYouType = new AsYouType(selectedCountry?.countryCode || undefined);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -120,17 +120,17 @@ const UnifiedPhoneInput = ({
         <div className="w-px bg-input self-stretch" />
 
         <div className="relative flex-1">
-            <input
-                ref={inputRef}
-                type="tel"
-                value={value}
-                onChange={handlePhoneChange}
-                onFocus={() => setIsFocused(true)}
-                onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 text-sm bg-transparent outline-none rounded-r-md"
-                placeholder={selectedCountry?.format || "Phone number"}
-                required={required}
-            />
+          <input
+            ref={inputRef}
+            type="tel"
+            value={value}
+            onChange={handlePhoneChange}
+            onFocus={() => setIsFocused(true)}
+            onKeyDown={handleKeyDown}
+            className="w-full px-3 py-2 text-sm bg-transparent outline-none rounded-r-md"
+            placeholder={selectedCountry?.format || "Phone number"}
+            required={required}
+          />
         </div>
 
         {isOpen && (
@@ -229,7 +229,7 @@ export default function SignUpPage() {
         data
           .filter((country: any) => country.idd?.root)
           .map(async (country: any) => {
-            const countryCode = country.cca2;
+            const countryCode = country.cca2 as CountryCode;
             const dialCode = `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ''}`;
             
             let example = '';
@@ -366,100 +366,94 @@ export default function SignUpPage() {
           </motion.div>
         )}
 
-        {loading ? (
-          <div className="flex justify-center items-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-          </div>
-        ) : (
-          <form onSubmit={handleEmailSignUp} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <motion.div
-                whileHover={{ scale: 1.00 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <Input
-                  placeholder="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  className="h-12 text-lg"
-                />
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.00 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <Input
-                  placeholder="Last Name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  className="h-12 text-lg"
-                />
-              </motion.div>
-            </div>
-
-            <motion.div
-              whileHover={{ scale: 1.00 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <UnifiedPhoneInput
-                value={phoneNumber}
-                countryCode={countryCode}
-                onChange={setPhoneNumber}
-                onCountryChange={setCountryCode}
-                countries={countries}
-                required
-                error={phoneError}
-              />
-            </motion.div>
-
+        <form onSubmit={handleEmailSignUp} className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
             <motion.div
               whileHover={{ scale: 1.00 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
               <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
                 className="h-12 text-lg"
               />
             </motion.div>
-
             <motion.div
               whileHover={{ scale: 1.00 }}
               transition={{ type: "spring", stiffness: 400 }}
-              className="relative"
             >
               <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 required
-                className="h-12 text-lg pr-12"
+                className="h-12 text-lg"
               />
-              <button
-                type="button"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-              </button>
             </motion.div>
+          </div>
 
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+          <motion.div
+            whileHover={{ scale: 1.00 }}
+            transition={{ type: "spring", stiffness: 400 }}
+          >
+            <UnifiedPhoneInput
+              value={phoneNumber}
+              countryCode={countryCode}
+              onChange={setPhoneNumber}
+              onCountryChange={setCountryCode}
+              countries={countries}
+              required
+              error={phoneError}
+            />
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.00 }}
+            transition={{ type: "spring", stiffness: 400 }}
+          >
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-12 text-lg"
+            />
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.00 }}
+            transition={{ type: "spring", stiffness: 400 }}
+            className="relative"
+          >
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="h-12 text-lg pr-12"
+            />
+            <button
+              type="button"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+              onClick={() => setShowPassword(!showPassword)}
             >
-              <Button type="submit" className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-500 transition-colors">
-                Sign up
-              </Button>
-            </motion.div>
-          </form>
-        )}
+              {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+            </button>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Button type="submit" className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-500 transition-colors">
+              Sign up
+            </Button>
+          </motion.div>
+        </form>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">

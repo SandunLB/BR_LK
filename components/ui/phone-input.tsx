@@ -1,7 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Select } from '@/components/ui/select';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
 interface PhoneInputProps {
@@ -19,15 +25,16 @@ export function PhoneInput({ value, onChange, required = false }: PhoneInputProp
 
   return (
     <div className="flex gap-2">
-      <Select 
-        value={countryCode} 
-        onValueChange={setCountryCode}
-        className="w-24"
-      >
-        <option value="+94">+94</option>
-        <option value="+1">+1</option>
-        <option value="+44">+44</option>
-        <option value="+91">+91</option>
+      <Select value={countryCode} onValueChange={setCountryCode}>
+        <SelectTrigger className="w-24">
+          <SelectValue placeholder="Code" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="+94">+94</SelectItem>
+          <SelectItem value="+1">+1</SelectItem>
+          <SelectItem value="+44">+44</SelectItem>
+          <SelectItem value="+91">+91</SelectItem>
+        </SelectContent>
       </Select>
       <Input
         type="tel"
@@ -40,4 +47,3 @@ export function PhoneInput({ value, onChange, required = false }: PhoneInputProp
     </div>
   );
 }
-

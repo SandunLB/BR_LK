@@ -1,24 +1,36 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { CheckCircledIcon } from "@radix-ui/react-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBusinessDraft, formatTimestamp } from "@/utils/firebase";
 
-export default function SuccessPage() {
+interface PaymentDetails {
+  businessId?: string;
+  userId?: string;
+  amount?: number;
+  currency?: string;
+  paymentId?: string;
+  date?: string;
+}
+
+function LoadingSpinner() {
+  return (
+    <DashboardLayout>
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+function SuccessPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [paymentDetails, setPaymentDetails] = useState<{
-    businessId?: string;
-    userId?: string;
-    amount?: number;
-    currency?: string;
-    paymentId?: string;
-    date?: string;
-  } | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,13 +85,7 @@ export default function SuccessPage() {
   }, []);
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-        </div>
-      </DashboardLayout>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
@@ -165,5 +171,13 @@ export default function SuccessPage() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <SuccessPageContent />
+    </Suspense>
   );
 }

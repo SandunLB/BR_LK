@@ -11,12 +11,29 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+interface Business {
+  id: string;
+  path: string;
+  status: 'completed' | 'draft';
+  company?: {
+    name: string;
+  };
+  paymentDetails?: {
+    amount: number;
+  };
+}
+
 interface DashboardStats {
   totalUsers: number;
   totalBusinesses: number;
   completedBusinesses: number;
   totalRevenue: number;
-  recentBusinesses: any[];
+  recentBusinesses: Business[];
+}
+
+interface ApiResponse {
+  users: { id: string }[];
+  businesses: Business[];
 }
 
 export default function AdminDashboard() {
@@ -43,14 +60,14 @@ export default function AdminDashboard() {
       const [{ users }, { businesses }] = await Promise.all([
         usersResponse.json(),
         businessesResponse.json()
-      ]);
+      ]) as [{ users: ApiResponse['users'] }, { businesses: ApiResponse['businesses'] }];
 
-      const totalRevenue = businesses.reduce((sum: number, business: any) => 
+      const totalRevenue = businesses.reduce((sum: number, business: Business) => 
         sum + (business.paymentDetails?.amount || 0), 0
       );
 
       const completedBusinesses = businesses.filter(
-        (business: any) => business.status === 'completed'
+        (business: Business) => business.status === 'completed'
       ).length;
 
       setStats({
@@ -152,7 +169,7 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h2 className="text-lg font-bold mb-4">Recent Businesses</h2>
         <div className="space-y-4">
-          {stats.recentBusinesses.map((business: any) => (
+          {stats.recentBusinesses.map((business: Business) => (
             <div key={business.id} className="border-b pb-4 last:border-0">
               <div className="flex justify-between items-start">
                 <div>

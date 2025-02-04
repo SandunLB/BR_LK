@@ -56,28 +56,33 @@ export function OwnerInformation({ onNext, onBack, initialData }: OwnerInformati
     }
   }
 
-  const updateOwner = (id: string, field: keyof Owner, value: any) => {
+  const updateOwner = (
+    id: string, 
+    field: keyof Owner, 
+    value: string | boolean | File | null
+  ) => {
     setOwners(prev => prev.map(owner => {
       if (owner.id === id) {
-        const updatedOwner = { ...owner }
-
+        const updatedOwner = { ...owner };
+  
         if (field === "ownership") {
-          const numValue = value === "" ? "" : Math.min(100, Math.max(0, Number(value)))
-          updatedOwner[field] = numValue.toString()
-        } else if (field === "isCEO" && value === true) {
+          const numValue = value === "" ? "" : Math.min(100, Math.max(0, Number(value)));
+          updatedOwner[field] = numValue.toString();
+        } else if (field === "isCEO" && typeof value === "boolean") {
           prev.forEach((o) => {
-            if (o.id !== id) o.isCEO = false
-          })
-          updatedOwner.isCEO = true
+            if (o.id !== id) o.isCEO = false;
+          });
+          updatedOwner.isCEO = value;
         } else {
-          updatedOwner[field] = value
+          // Type assertion to handle all possible field types
+          (updatedOwner[field] as typeof value) = value;
         }
-
-        return updatedOwner
+  
+        return updatedOwner;
       }
-      return owner
-    }))
-  }
+      return owner;
+    }));
+  };
 
   const handleFileChange = async (id: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { Payment } from "@/components/business/payment";
 import { PaymentStatus } from "@/components/business/payment-status";
 import { Building, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getBusinesses, deleteDocument, formatTimestamp } from "@/utils/firebase";
+import { getBusinesses, deleteDocument } from "@/utils/firebase";
 
 interface Owner {
   id: string;
@@ -53,7 +53,7 @@ const steps = [
   { id: 7, name: "Payment", description: "Complete payment" },
 ];
 
-export default function BusinessPage() {
+function BusinessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showRegistration, setShowRegistration] = useState(false);
@@ -79,7 +79,6 @@ export default function BusinessPage() {
     fetchBusinesses();
   }, [user]);
 
-  // Initialize registration data
   useEffect(() => {
     const initializeData = () => {
       if (typeof window !== "undefined") {
@@ -178,7 +177,6 @@ export default function BusinessPage() {
 
   const handleCancelRegistration = async () => {
     try {
-      // Clean up uploaded documents
       if (formData.owner?.length) {
         for (const owner of formData.owner) {
           if (owner.documentUrl) {
@@ -310,7 +308,7 @@ export default function BusinessPage() {
                           Ownership Structure
                         </h4>
                         <div className="space-y-3">
-                          {business.owner?.map((owner: any) => (
+                          {business.owner?.map((owner: Owner) => (
                             <div key={owner.id} className="flex items-center justify-between p-2 bg-white rounded border">
                               <div>
                                 <p className="font-medium text-gray-800">{owner.fullName}</p>
@@ -425,5 +423,22 @@ export default function BusinessPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+// Main component with Suspense boundary
+export default function BusinessPage() {
+  return (
+    <Suspense 
+      fallback={
+        <DashboardLayout>
+          <div className="flex items-center justify-center h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <BusinessContent />
+    </Suspense>
   );
 }

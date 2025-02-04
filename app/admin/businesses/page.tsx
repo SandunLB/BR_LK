@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Search, FileText, X } from "lucide-react";
+import { 
+  Loader2, 
+  Search, 
+  FileText, 
+  X, 
+  AlertCircle, 
+  CheckCircle2 
+} from "lucide-react";
 
 interface Document {
   url: string;
@@ -23,6 +30,10 @@ interface PaymentDetails {
   paymentMethod: string;
   status: string;
   stripePaymentIntentId: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
 }
 
 interface Business {
@@ -62,24 +73,34 @@ interface EditBusinessProps {
   onUpdate: (updatedBusiness: Business) => void;
 }
 
+const DOCUMENT_TYPES = {
+  filedArticles: 'Filed Articles',
+  einTaxId: 'EIN / Tax ID Number',
+  organizerStatement: 'Statement of the Organizer',
+  boiReport: 'BOI Report'
+} as const;
+
+type DocumentKey = keyof typeof DOCUMENT_TYPES;
+
 function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<Record<string, File>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleFileSelect = (docNumber: string, file: File | null) => {
+  const handleFileSelect = (docKey: DocumentKey, file: File | null) => {
     if (file) {
       setDocuments(prev => ({
         ...prev,
-        [docNumber]: file
+        [docKey]: file
       }));
     }
   };
 
-  const removeDocument = (docNumber: string) => {
+  const removeDocument = (docKey: DocumentKey) => {
     const newDocs = { ...documents };
-    delete newDocs[docNumber];
+    delete newDocs[docKey];
     setDocuments(newDocs);
   };
 
@@ -87,12 +108,16 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const documentUrls: Record<string, Document> = {};
+      const totalFiles = Object.keys(documents).length;
+      let uploadedCount = 0;
 
-      for (const [docNumber, file] of Object.entries(documents)) {
-        setUploadProgress(prev => ({ ...prev, [docNumber]: true }));
+      for (const [docKey, file] of Object.entries(documents)) {
+        setUploadProgress(prev => ({ ...prev, [docKey]: true }));
+        setSuccessMessage(`Uploading file ${++uploadedCount} of ${totalFiles}...`);
         
         const formData = new FormData();
         formData.append('file', file);
@@ -103,17 +128,24 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
           body: formData
         });
 
-        if (!uploadResponse.ok) throw new Error(`Failed to upload document ${docNumber}`);
+        if (!uploadResponse.ok) throw new Error(`Failed to upload ${DOCUMENT_TYPES[docKey as DocumentKey]}`);
         
         const { url } = await uploadResponse.json();
         
-        documentUrls[docNumber] = {
+        documentUrls[docKey] = {
           url,
           name: file.name
         };
 
-        setUploadProgress(prev => ({ ...prev, [docNumber]: false }));
+        setUploadProgress(prev => ({ ...prev, [docKey]: false }));
       }
+
+      const updatedDocuments = {
+        ...(business.documents || {}),
+        ...documentUrls
+      };
+
+      setSuccessMessage('Saving changes...');
 
       const response = await fetch(
         `/api/businesses/${business.userId}/${business.id}`,
@@ -123,10 +155,7 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            documents: {
-              ...(business.documents || {}),
-              ...documentUrls
-            }
+            documents: updatedDocuments
           }),
         }
       );
@@ -134,8 +163,20 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
       if (!response.ok) throw new Error('Failed to update business');
 
       const result = await response.json();
-      onUpdate(result.data);
-      onClose();
+
+      const updatedBusiness = {
+        ...business,
+        documents: updatedDocuments,
+        updatedAt: result.data.updatedAt
+      };
+
+      onUpdate(updatedBusiness);
+      setDocuments({});
+      setSuccessMessage(`Successfully uploaded ${totalFiles} document${totalFiles > 1 ? 's' : ''}!`);
+      
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update business');
     } finally {
@@ -144,61 +185,84 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Manage Documents</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X className="w-6 h-6" />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b">
+          <div>
+            <h2 className="text-xl font-bold">Manage Documents</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Upload and manage business documentation
+            </p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg flex items-start">
+            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <p>{error}</p>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 text-green-600 rounded-lg flex items-start">
+            <CheckCircle2 className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <p>{successMessage}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <h3 className="font-medium mb-4">Upload New Documents</h3>
+            <h3 className="font-medium mb-4 flex items-center">
+              <span>Upload Documents</span>
+              {isLoading && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+            </h3>
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <div key={num} className="flex items-center space-x-4">
+              {(Object.entries(DOCUMENT_TYPES) as [DocumentKey, string][]).map(([key, name]) => (
+                <div key={key} className="p-4 border rounded-lg hover:border-blue-200 transition-colors">
                   <div className="flex-1">
-                    <label className="block text-sm font-medium mb-2">
-                      Document {num}
+                    <label className="block text-sm font-medium mb-2 text-gray-700">
+                      {name}
                     </label>
                     <div className="flex items-center space-x-2">
                       <input
                         type="file"
-                        onChange={(e) => handleFileSelect(`doc${num}`, e.target.files?.[0] || null)}
+                        onChange={(e) => handleFileSelect(key, e.target.files?.[0] || null)}
                         className="hidden"
-                        id={`doc${num}`}
+                        id={key}
+                        accept=".pdf,.doc,.docx,.txt"
                       />
                       <label
-                        htmlFor={`doc${num}`}
-                        className="px-4 py-2 border rounded hover:bg-gray-50 cursor-pointer flex items-center space-x-2"
+                        htmlFor={key}
+                        className="px-4 py-2 bg-gray-50 border rounded-lg hover:bg-gray-100 cursor-pointer flex items-center space-x-2 transition-colors"
                       >
                         <FileText className="w-4 h-4" />
                         <span>Choose File</span>
                       </label>
-                      {documents[`doc${num}`] && (
-                        <>
-                          <span className="text-sm text-gray-600 truncate max-w-xs">
-                            {documents[`doc${num}`].name}
+                      {documents[key] && (
+                        <div className="flex items-center flex-1 min-w-0">
+                          <span className="text-sm text-gray-600 truncate">
+                            {documents[key].name}
                           </span>
                           <button
                             type="button"
-                            onClick={() => removeDocument(`doc${num}`)}
-                            className="p-1 hover:bg-red-50 rounded-full text-red-500"
+                            onClick={() => removeDocument(key)}
+                            className="ml-2 p-1 hover:bg-red-50 rounded-full text-red-500 transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>
-                        </>
+                        </div>
                       )}
-                      {uploadProgress[`doc${num}`] && (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      {uploadProgress[key] && (
+                        <div className="flex items-center text-blue-600">
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          <span className="text-sm">Uploading...</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -208,39 +272,44 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
           </div>
 
           {business.documents && Object.keys(business.documents).length > 0 && (
-            <div>
+            <div className="pt-6 border-t">
               <h3 className="font-medium mb-4">Current Documents</h3>
-              <div className="space-y-2 bg-gray-50 p-4 rounded">
-                {Object.entries(business.documents).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between py-2">
-                    <span className="font-medium">{key}</span>
-                    <a
-                      href={value.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 hover:underline flex items-center space-x-1"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>{value.name}</span>
-                    </a>
-                  </div>
-                ))}
+              <div className="bg-gray-50 rounded-lg divide-y divide-gray-200">
+                {(Object.entries(DOCUMENT_TYPES) as [DocumentKey, string][]).map(([key, name]) => {
+                  const doc = business.documents?.[key];
+                  if (!doc) return null;
+                  
+                  return (
+                    <div key={key} className="flex items-center justify-between p-4 hover:bg-gray-100 transition-colors">
+                      <span className="font-medium text-gray-700">{name}</span>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 flex items-center space-x-2 px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm">{doc.name}</span>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          <div className="flex justify-end space-x-4 pt-4 border-t">
+          <div className="flex justify-end space-x-4 pt-6 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded hover:bg-gray-50"
+              className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading || Object.keys(documents).length === 0}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
                 <span className="flex items-center">
@@ -285,14 +354,42 @@ export default function BusinessesPage() {
     }
   };
 
-  const formatTimestamp = (timestamp: FirebaseFirestore.Timestamp | null) => {
+  const formatTimestamp = (timestamp: any, business?: Business) => {
     if (!timestamp) return 'N/A';
     
     try {
-      return new Date(timestamp.seconds * 1000).toLocaleString();
+      // If it's the createdAt field and it's serverTimestamp, use paymentDetails.createdAt
+      if (timestamp._methodName === 'serverTimestamp' && business?.paymentDetails?.createdAt) {
+        const paymentCreatedAt = business.paymentDetails.createdAt;
+        return new Date(paymentCreatedAt.seconds * 1000).toLocaleString();
+      }
+  
+      // Handle seconds and nanoseconds case
+      if (timestamp._seconds || timestamp.seconds) {
+        const seconds = timestamp._seconds || timestamp.seconds;
+        return new Date(seconds * 1000).toLocaleString();
+      }
+  
+      return 'N/A';
     } catch (error) {
-      return 'Invalid Date';
+      console.error('Error formatting timestamp:', error);
+      return 'N/A';
     }
+  };
+  
+
+  const handleBusinessUpdate = (updatedBusiness: Business) => {
+    setBusinesses(prevBusinesses => 
+      prevBusinesses.map(b => 
+        b.id === updatedBusiness.id ? updatedBusiness : b
+      )
+    );
+    setSelectedBusinessForEdit(updatedBusiness);
+  };
+
+  const handleOpenModal = (business: Business) => {
+    const currentBusiness = businesses.find(b => b.id === business.id);
+    setSelectedBusinessForEdit(currentBusiness || business);
   };
 
   const filteredBusinesses = businesses.filter(business => {
@@ -313,7 +410,6 @@ export default function BusinessesPage() {
     );
   }
 
-  // Add error handling UI
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -359,14 +455,14 @@ export default function BusinessesPage() {
           <div key={business.id} className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-xl font-bold">{business.company?.name}</h2>
+                <h2 className="text-xl font-bold">{business.company?.name || 'Unnamed Business'}</h2>
                 <p className="text-sm text-gray-500">ID: {business.id}</p>
                 <p className="text-sm text-gray-500">User Email: {business.userEmail}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setSelectedBusinessForEdit(business)}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                  onClick={() => handleOpenModal(business)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                   title="Manage Documents"
                 >
                   <FileText className="w-5 h-5" />
@@ -420,7 +516,7 @@ export default function BusinessesPage() {
                   <p>Status: {business.paymentDetails?.status}</p>
                   <p className="truncate">
                     ID: {business.paymentDetails?.stripePaymentIntentId}
-                    </p>
+                  </p>
                 </div>
               </div>
             </div>
@@ -429,20 +525,25 @@ export default function BusinessesPage() {
               <div className="mt-6 pt-6 border-t">
                 <h3 className="font-semibold mb-4">Documents</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(business.documents).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <span className="font-medium text-sm">{key}</span>
-                      <a
-                        href={value.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
-                      >
-                        <FileText className="w-4 h-4" />
-                        <span>{value.name}</span>
-                      </a>
-                    </div>
-                  ))}
+                  {(Object.entries(DOCUMENT_TYPES) as [DocumentKey, string][]).map(([key, name]) => {
+                    const doc = business.documents?.[key];
+                    if (!doc) return null;
+
+                    return (
+                      <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span className="font-medium text-sm">{name}</span>
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>{doc.name}</span>
+                        </a>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -477,10 +578,10 @@ export default function BusinessesPage() {
               </div>
             )}
 
-            <div className="mt-6 pt-4 border-t text-sm text-gray-500">
-              <div>Created: {formatTimestamp(business.createdAt)}</div>
-              <div>Updated: {formatTimestamp(business.updatedAt)}</div>
-            </div>
+          <div className="mt-6 pt-4 border-t text-sm text-gray-500">
+            <div>Created: {formatTimestamp(business.createdAt, business)}</div>
+            <div>Updated: {formatTimestamp(business.updatedAt)}</div>
+          </div>
           </div>
         ))}
       </div>
@@ -489,12 +590,7 @@ export default function BusinessesPage() {
         <EditBusiness
           business={selectedBusinessForEdit}
           onClose={() => setSelectedBusinessForEdit(null)}
-          onUpdate={(updatedBusiness) => {
-            setBusinesses(businesses.map(b => 
-              b.id === updatedBusiness.id ? updatedBusiness : b
-            ));
-            setSelectedBusinessForEdit(null);
-          }}
+          onUpdate={handleBusinessUpdate}
         />
       )}
     </div>

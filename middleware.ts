@@ -2,15 +2,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Get the pathname of the request (e.g. /, /admin, etc.)
   const path = request.nextUrl.pathname;
 
-  // If we're accessing the root path, redirect to /signin
+  // If accessing root or /signin, redirect based on path
   if (path === '/') {
     return NextResponse.redirect(new URL('/signin', request.url));
   }
 
-  // Allow all other requests to proceed
+  // Don't redirect if already on a signin page or admin path
+  if (path === '/signin' || path.startsWith('/admin')) {
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 

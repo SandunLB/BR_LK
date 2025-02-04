@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -12,9 +12,8 @@ import {
   Loader2 
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 
 export default function AdminLayout({
   children,
@@ -24,8 +23,6 @@ export default function AdminLayout({
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -35,40 +32,10 @@ export default function AdminLayout({
   ];
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user?.email) {
-        setIsCheckingAdmin(false);
-        return;
-      }
-
-      try {
-        const adminDoc = await getDoc(doc(db, "admins", user.email));
-        setIsAdmin(adminDoc.exists() && adminDoc.data()?.role === 'admin');
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-      } finally {
-        setIsCheckingAdmin(false);
-      }
-    };
-
-    if (user) {
-      checkAdminStatus();
-    } else {
-      setIsCheckingAdmin(false);
+    if (!loading && !user && !pathname?.includes('/signin')) {
+      router.push('/admin/signin');
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (!loading && !isCheckingAdmin) {
-      if (!user && !pathname?.includes('/signin')) {
-        router.push('/admin/signin');
-      } else if (!isAdmin && !pathname?.includes('/signin')) {
-        // Redirect non-admin users to home page
-        router.push('/');
-      }
-    }
-  }, [user, loading, isAdmin, isCheckingAdmin, pathname, router]);
+  }, [user, loading, pathname, router]);
 
   const handleSignOut = async () => {
     try {
@@ -79,7 +46,7 @@ export default function AdminLayout({
     }
   };
 
-  if (loading || isCheckingAdmin) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -87,14 +54,14 @@ export default function AdminLayout({
     );
   }
 
-  // Don't show layout for non-admin users
-  if (!isAdmin && !pathname?.includes('/signin')) {
-    return null;
-  }
-
   // Don't show layout on signin page
   if (pathname?.includes('/signin')) {
     return children;
+  }
+
+  // Don't show layout for non-authenticated users
+  if (!user) {
+    return null;
   }
 
   return (
@@ -132,7 +99,7 @@ export default function AdminLayout({
             {/* Sign Out Button */}
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full px-4 py-2 rounded-md text-gray-600 hover:bg-gray-50"
+              className="flex items-center w-full px-4 py-2 mt-4 rounded-md text-gray-600 hover:bg-gray-50"
             >
               <LogOut className="w-5 h-5 mr-3" />
               Sign Out

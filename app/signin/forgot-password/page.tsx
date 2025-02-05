@@ -148,7 +148,7 @@ export default function ForgotPasswordPage() {
           <Button
             type="submit"
             disabled={isLoading || remainingTime > 0}
-            className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-500"
+            className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff]"
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -162,7 +162,7 @@ export default function ForgotPasswordPage() {
 
         {/* Back to Sign In Link */}
         <div className="text-center">
-          <Link href="/signin" className="text-indigo-600 hover:text-indigo-500">
+          <Link href="/signin" className="text-[#3659fb] hover:text-[#2944c7]">
             Back to Sign In
           </Link>
         </div>

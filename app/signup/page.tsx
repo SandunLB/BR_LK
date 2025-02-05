@@ -350,7 +350,7 @@ export default function SignUpPage() {
           <h2 className="text-4xl font-bold tracking-tight">Let's get started!</h2>
           <p className="text-lg text-gray-600">
             Already have an account?{' '}
-            <Link href="/signin" className="text-indigo-600 hover:text-indigo-500 font-medium transition-colors">
+            <Link href="/signin" className="text-[#3659fb] hover:text-[#2944c7] font-medium transition-colors">
               Sign in
             </Link>
           </p>
@@ -449,7 +449,7 @@ export default function SignUpPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Button type="submit" className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-500 transition-colors">
+            <Button type="submit" className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors">
               Sign up
             </Button>
           </motion.div>

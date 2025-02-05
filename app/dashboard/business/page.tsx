@@ -278,16 +278,16 @@ function BusinessContent() {
           {/* Progress Bar */}
           <div className="relative">
             <div className="flex mb-2 items-center justify-between">
-              <span className="text-sm font-semibold text-indigo-600">
+              <span className="text-sm font-semibold text-[#3659fb]">
                 Registration Progress
               </span>
-              <span className="text-sm font-semibold text-indigo-600">
+              <span className="text-sm font-semibold text-[#3659fb]">
                 {Math.round((registrationStep / 4) * 100)}%
               </span>
             </div>
             <div className="h-2 bg-indigo-100 rounded">
               <div
-                className="h-2 bg-indigo-600 rounded transition-all duration-500"
+                className="h-2 bg-[#3659fb] rounded transition-all duration-500"
                 style={{ width: `${(registrationStep / 4) * 100}%` }}
               />
             </div>
@@ -475,7 +475,7 @@ function BusinessContent() {
               sessionStorage.removeItem("businessRegistrationStep");
               router.push("/dashboard/business?register=true");
             }}
-            className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff] mt-6"
+            className="bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200 mt-6"
           >
             <Building className="mr-2 h-4 w-4" />
             Register New Business

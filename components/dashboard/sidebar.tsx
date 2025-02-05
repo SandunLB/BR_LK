@@ -23,10 +23,10 @@ import { useAuth } from '@/hooks/use-auth';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
-  { name: 'Communication', href: '/dashboard/communication', icon: MessageSquare },
+  // { name: 'Communication', href: '/dashboard/communication', icon: MessageSquare },
   { name: 'My Business', href: '/dashboard/business', icon: Briefcase },
-  { name: 'Affiliate Program', href: '/dashboard/affiliate', icon: Users },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  // { name: 'Affiliate Program', href: '/dashboard/affiliate', icon: Users },
+  // { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export function Sidebar() {

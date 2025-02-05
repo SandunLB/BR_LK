@@ -141,7 +141,7 @@ export default function SignInPage() {
                 Remember me
               </label>
             </div>
-            <Link href="/signin/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-500 transition-colors">
+            <Link href="/signin/forgot-password" className="text-sm text-[#3659fb] hover:text-[#2944c7] transition-colors">
               Forgotten password?
             </Link>
           </div>
@@ -150,7 +150,7 @@ export default function SignInPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Button type="submit" className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-500 transition-colors">
+            <Button type="submit" className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors">
               Sign in
             </Button>
           </motion.div>
@@ -206,7 +206,7 @@ export default function SignInPage() {
         >
           <p className="text-center text-sm text-gray-600">
             New to our platform?{' '}
-            <Link href="/signup" className="text-indigo-600 hover:text-indigo-500 font-medium transition-colors">
+            <Link href="/signup" className="text-[#3659fb] hover:text-[#2944c7] font-medium transition-colors">
               Sign up
             </Link>
           </p>

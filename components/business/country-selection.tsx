@@ -103,7 +103,7 @@ export function CountrySelection({ onNext, initialData }: CountrySelectionProps)
 
       <div className="flex justify-center">
         <Button
-          className="px-8 bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
+          className="px-8 bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200"
           disabled={!selectedCountry}
           onClick={() => onNext(countries.find((c) => c.id === selectedCountry)!)}
         >

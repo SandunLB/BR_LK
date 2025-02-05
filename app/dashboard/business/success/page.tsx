@@ -155,7 +155,7 @@ function SuccessPageContent() {
         <div className="space-y-4">
           <Button
             onClick={() => router.push("/dashboard/business")}
-            className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff] text-white w-full"
+            className="bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200 text-white w-full"
           >
             Go to Business Dashboard
           </Button>

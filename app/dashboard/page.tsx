@@ -357,7 +357,7 @@ export default function DashboardPage() {
           </div>
           <Button 
             onClick={() => router.push('/dashboard/business?register=true')}
-            className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
+            className="bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200"
           >
             <Building className="mr-2 h-4 w-4" />
             Register New Business
@@ -758,7 +758,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-center">
                   <Button 
                     onClick={() => router.push('/dashboard/business?register=true')}
-                    className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
+                    className="bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200"
                     size="lg"
                   >
                     <Building className="mr-2 h-5 w-5" />

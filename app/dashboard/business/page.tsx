@@ -13,8 +13,7 @@ import { OwnerInformation } from "@/components/business/owner-information";
 import { AddressDetails } from "@/components/business/address-details";
 import { Review } from "@/components/business/review";
 import { Payment } from "@/components/business/payment";
-import { PaymentStatus } from "@/components/business/payment-status";
-import { Building, Loader2 } from "lucide-react";
+import { Building, Building2, Loader2, CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Users, MapPin, CreditCard, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getBusinesses, deleteDocument } from "@/utils/firebase";
 
@@ -61,6 +60,7 @@ function BusinessContent() {
   const [formData, setFormData] = useState<FormData>({});
   const [existingBusinesses, setExistingBusinesses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedBusinessId, setExpandedBusinessId] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -200,6 +200,20 @@ function BusinessContent() {
     }
   };
 
+  const getCurrentStep = (documents: any) => {
+    if (!documents) return 0;
+    const documentOrder = ['filedArticles', 'einTaxId', 'organizerStatement', 'boiReport'];
+    let currentStep = 0;
+    
+    documentOrder.forEach((doc, index) => {
+      if (documents[doc]) {
+        currentStep = index + 1;
+      }
+    });
+    
+    return currentStep;
+  };
+
   const renderRegistrationStep = () => {
     switch (currentStep) {
       case 1:
@@ -228,6 +242,219 @@ function BusinessContent() {
     }
   };
 
+  const renderBusinessCard = (business: any) => {
+    const isExpanded = expandedBusinessId === business.id;
+    const registrationStep = getCurrentStep(business.documents);
+    const documentOrder = [
+      { key: 'filedArticles', name: 'Filed Articles' },
+      { key: 'einTaxId', name: 'EIN / Tax ID Number' },
+      { key: 'organizerStatement', name: 'Statement of the Organizer' },
+      { key: 'boiReport', name: 'BOI Report' }
+    ];
+
+    return (
+      <Card key={business.id} className="shadow-lg">
+        <CardContent className="p-6 space-y-6">
+          {/* Header Section */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-bold flex items-center gap-2">
+                <Building2 className="h-6 w-6 text-indigo-600" />
+                {business.company?.name}
+              </h3>
+              <p className="text-gray-500 mt-1">
+                Registered in {business.country?.name}
+              </p>
+            </div>
+            <div className={`px-4 py-2 rounded-full ${
+              registrationStep === 4 
+                ? 'bg-green-100 text-green-800'
+                : 'bg-indigo-100 text-indigo-800'
+            }`}>
+              {registrationStep === 4 ? 'Completed' : 'In Progress'}
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="relative">
+            <div className="flex mb-2 items-center justify-between">
+              <span className="text-sm font-semibold text-indigo-600">
+                Registration Progress
+              </span>
+              <span className="text-sm font-semibold text-indigo-600">
+                {Math.round((registrationStep / 4) * 100)}%
+              </span>
+            </div>
+            <div className="h-2 bg-indigo-100 rounded">
+              <div
+                className="h-2 bg-indigo-600 rounded transition-all duration-500"
+                style={{ width: `${(registrationStep / 4) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Document Status */}
+          <div className="space-y-4">
+            {documentOrder.map((doc, index) => {
+              const isCompleted = business.documents && business.documents[doc.key];
+              const isCurrent = index === registrationStep;
+              
+              return (
+                <div 
+                  key={doc.key}
+                  className={`flex items-center p-4 rounded-lg border ${
+                    isCompleted ? 'bg-green-50 border-green-200' :
+                    isCurrent ? 'bg-indigo-50 border-indigo-200' :
+                    'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex-shrink-0 mr-4">
+                    {isCompleted ? (
+                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    ) : isCurrent ? (
+                      <Clock className="h-6 w-6 text-indigo-600 animate-pulse" />
+                    ) : (
+                      <AlertCircle className="h-6 w-6 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-grow">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`font-medium ${
+                          isCompleted ? 'text-green-800' :
+                          isCurrent ? 'text-indigo-800' :
+                          'text-gray-600'
+                        }`}>
+                          {doc.name}
+                        </p>
+                        {isCompleted && business.documents[doc.key].name && (
+                          <p className="text-sm text-gray-500 flex items-center mt-1">
+                            <FileText className="h-4 w-4 mr-1" />
+                            {business.documents[doc.key].name}
+                          </p>
+                        )}
+                      </div>
+                      {isCompleted && (
+                        <a 
+                          href={business.documents[doc.key].url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                        >
+                          View Document
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Expandable Details Section */}
+          <div className="border-t pt-4">
+            <button
+              onClick={() => setExpandedBusinessId(isExpanded ? null : business.id)}
+              className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+            >
+              <span className="font-medium text-gray-700">Additional Details</span>
+              {isExpanded ? (
+                <ChevronUp className="h-5 w-5 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-gray-500" />
+              )}
+            </button>
+
+            {isExpanded && (
+              <div className="mt-4 space-y-6">
+                {/* Company Details */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-gray-500" />
+                    Company Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-500 text-sm">Industry</p>
+                      <p className="font-medium">{business.company?.industry}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Package</p>
+                      <p className="font-medium">{business.package?.name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ownership Structure */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-gray-500" />
+                    Ownership Structure
+                  </h3>
+                  <div className="space-y-3">
+                    {business?.owner?.map((owner: Owner) => (
+                      <div key={owner.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                        <div>
+                          <p className="font-medium">{owner.fullName}</p>
+                          <p className="text-sm text-gray-500">
+                            {owner.isCEO ? "CEO • " : ""}
+                            {owner.birthDate}
+                          </p>
+                        </div>
+                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
+                          {owner.ownership}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Address Details */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-gray-500" />
+                    Address Details
+                  </h3>
+                  <div className="space-y-2">
+                    <p>{business?.address?.street}</p>
+                    <p>{business?.address?.city}, {business?.address?.state}</p>
+                    <p>{business?.address?.postalCode}, {business?.address?.country}</p>
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-gray-500" />
+                    Payment Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-500 text-sm">Amount</p>
+                      <p className="font-medium">${business?.package?.price}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Status</p>
+                      <p className="font-medium capitalize">{business?.paymentDetails?.status}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Payment Method</p>
+                      <p className="font-medium capitalize">{business?.paymentDetails?.paymentMethod}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Currency</p>
+                      <p className="font-medium">{business?.paymentDetails?.currency?.toUpperCase()}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderBusinessDashboard = () => (
     <div className="space-y-6">
       <Card>
@@ -239,123 +466,9 @@ function BusinessContent() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {existingBusinesses.map((business) => (
-              <Card key={business.id} className="shadow-lg hover:shadow-xl transition-shadow duration-200">
-                <CardContent className="p-6 space-y-6">
-                  {/* Header Section */}
-                  <div className="flex items-center justify-between border-b pb-4">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
-                        <Building className="h-6 w-6 text-indigo-600" />
-                        {business.company?.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Registered in {business.country?.name}
-                      </p>
-                    </div>
-                    <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
-                      {business.company?.type}
-                    </span>
-                  </div>
-
-                  {/* Main Details Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column */}
-                    <div className="space-y-6">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2H5a1 1 0 01-1-1V4zm3 1h2v2H7V5zm4 0h2v2h-2V5zM5 10h10v6H5v-6z" clipRule="evenodd" />
-                          </svg>
-                          Company Details
-                        </h4>
-                        <dl className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <dt className="text-gray-600">Industry</dt>
-                            <dd className="text-gray-800">{business.company?.industry}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt className="text-gray-600">Package</dt>
-                            <dd className="text-gray-800">
-                              {business.package?.name} (${business.package?.price})
-                            </dd>
-                          </div>
-                        </dl>
-                      </div>
-
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                          </svg>
-                          Address
-                        </h4>
-                        <div className="text-sm space-y-1">
-                          <p className="text-gray-800">{business.address?.street}</p>
-                          <p className="text-gray-800">{business.address?.city}, {business.address?.state}</p>
-                          <p className="text-gray-800">{business.address?.postalCode}, {business.address?.country}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                          </svg>
-                          Ownership Structure
-                        </h4>
-                        <div className="space-y-3">
-                          {business.owner?.map((owner: Owner) => (
-                            <div key={owner.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                              <div>
-                                <p className="font-medium text-gray-800">{owner.fullName}</p>
-                                <p className="text-xs text-gray-500">
-                                  {owner.isCEO ? "CEO • " : ""}
-                                  {owner.birthDate || "DOB not provided"}
-                                </p>
-                              </div>
-                              <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
-                                {owner.ownership}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-lg mb-3 text-gray-700 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                          </svg>
-                          Payment Details
-                        </h4>
-                        <div className="space-y-2">
-                          <PaymentStatus
-                            status={business.paymentDetails?.status === "succeeded" ? "success" : "failed"}
-                            amount={business.paymentDetails?.amount || 0}
-                            paymentId={business.paymentDetails?.stripePaymentIntentId}
-                            timestamp={business.paymentDetails?.createdAt}
-                          />
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Payment Method:</span>
-                            <span className="text-gray-800 capitalize">{business.paymentDetails?.paymentMethod}</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Currency:</span>
-                            <span className="text-gray-800">{business.paymentDetails?.currency?.toUpperCase()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {existingBusinesses.map((business) => renderBusinessCard(business))}
           </div>
-
+          
           <Button
             onClick={() => {
               sessionStorage.removeItem("businessRegistrationData");
@@ -426,7 +539,6 @@ function BusinessContent() {
   );
 }
 
-// Main component with Suspense boundary
 export default function BusinessPage() {
   return (
     <Suspense 

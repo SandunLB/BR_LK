@@ -59,7 +59,7 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
         <p className="text-gray-600 mb-6">Please go back and fill in all required fields.</p>
         <Button
           onClick={onBack}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
         >
           Go Back
         </Button>
@@ -70,7 +70,7 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="text-center">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
           Review Your Information
         </h2>
         <p className="text-gray-500 mt-2">Please review all the information before proceeding to payment.</p>
@@ -292,7 +292,7 @@ export function Review({ data, onNext, onBack, onEdit }: ReviewProps) {
         </Button>
         <Button
           onClick={onNext}
-          className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          className="px-8 bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
         >
           Proceed to Payment
         </Button>

@@ -121,7 +121,7 @@ export default function PaymentsPage() {
       <TooltipProvider>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
               Payment History
             </h1>
             <p className="text-gray-500 mt-2">All payment transactions for your registered businesses</p>

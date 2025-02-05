@@ -459,7 +459,7 @@ function BusinessContent() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <CardTitle className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
             Your Businesses
           </CardTitle>
           <CardDescription className="text-md">Manage your registered business entities</CardDescription>
@@ -475,7 +475,7 @@ function BusinessContent() {
               sessionStorage.removeItem("businessRegistrationStep");
               router.push("/dashboard/business?register=true");
             }}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 mt-6"
+            className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff] mt-6"
           >
             <Building className="mr-2 h-4 w-4" />
             Register New Business
@@ -502,7 +502,7 @@ function BusinessContent() {
           <>
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
                   Business Registration
                 </h1>
                 <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
@@ -526,7 +526,7 @@ function BusinessContent() {
         ) : (
           <>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
                 Business Dashboard
               </h1>
               <p className="text-gray-500 mt-2">Manage your registered businesses</p>

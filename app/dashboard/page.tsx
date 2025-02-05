@@ -181,7 +181,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
             Welcome back, {user?.displayName || user?.email?.split("@")[0]}
           </h1>
           <p className="text-gray-500 mt-2">Your business registration status</p>
@@ -350,14 +350,14 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
               Welcome back, {user?.displayName || user?.email?.split("@")[0]}
             </h1>
             <p className="text-gray-500 mt-2">Here's an overview of your business portfolio</p>
           </div>
           <Button 
             onClick={() => router.push('/dashboard/business?register=true')}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
           >
             <Building className="mr-2 h-4 w-4" />
             Register New Business
@@ -713,7 +713,7 @@ export default function DashboardPage() {
       <DashboardLayout>
         <div className="space-y-8">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
               Welcome to Business Registration
             </h1>
             <p className="text-gray-500 mt-2">Start your business journey today</p>
@@ -721,7 +721,7 @@ export default function DashboardPage() {
 
           <Card className="border border-indigo-100 hover:border-indigo-200 transition-colors">
             <CardHeader>
-              <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <CardTitle className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
                 Register Your First Business
               </CardTitle>
               <CardDescription>Begin your entrepreneurship journey with us</CardDescription>
@@ -758,7 +758,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-center">
                   <Button 
                     onClick={() => router.push('/dashboard/business?register=true')}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                    className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
                     size="lg"
                   >
                     <Building className="mr-2 h-5 w-5" />

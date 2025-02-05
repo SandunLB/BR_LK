@@ -33,7 +33,7 @@ export function CountrySelection({ onNext, initialData }: CountrySelectionProps)
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
           Select Country of Incorporation
         </h2>
         <p className="text-gray-500 mt-2">
@@ -103,7 +103,7 @@ export function CountrySelection({ onNext, initialData }: CountrySelectionProps)
 
       <div className="flex justify-center">
         <Button
-          className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          className="px-8 bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
           disabled={!selectedCountry}
           onClick={() => onNext(countries.find((c) => c.id === selectedCountry)!)}
         >

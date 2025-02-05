@@ -115,7 +115,7 @@ function SuccessPageContent() {
       <div className="max-w-2xl mx-auto space-y-8 p-4">
         <div className="text-center space-y-4">
           <CheckCircledIcon className="h-20 w-20 text-indigo-600 mx-auto mb-4 animate-pulse" />
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
             Registration Successful!
           </h1>
           <p className="text-gray-500 mt-2">Your business is now officially registered with us.</p>
@@ -124,7 +124,7 @@ function SuccessPageContent() {
         {paymentDetails && (
           <Card className="border border-indigo-100 hover:shadow-md transition-all">
             <CardHeader>
-              <CardTitle className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <CardTitle className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
                 Payment Details
               </CardTitle>
             </CardHeader>
@@ -155,7 +155,7 @@ function SuccessPageContent() {
         <div className="space-y-4">
           <Button
             onClick={() => router.push("/dashboard/business")}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white w-full"
+            className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff] text-white w-full"
           >
             Go to Business Dashboard
           </Button>

@@ -49,7 +49,7 @@ export function PackageSelection({ onNext, onBack, initialData }: PackageSelecti
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
           Select Your Package
         </h2>
         <p className="text-gray-500 mt-3">
@@ -69,7 +69,7 @@ export function PackageSelection({ onNext, onBack, initialData }: PackageSelecti
           >
             {pkg.recommended && (
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                <div className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] text-white px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                   <Sparkles className="h-4 w-4" />
                   Recommended
                 </div>
@@ -135,7 +135,7 @@ export function PackageSelection({ onNext, onBack, initialData }: PackageSelecti
         <Button
           disabled={!selectedPackage}
           onClick={() => onNext(packages.find((p) => p.id === selectedPackage)!)}
-          className="px-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          className="px-8 bg-gradient-to-r from-[#3659fb] to-[#6384ff] hover:from-[#4b6bff] hover:to-[#84a4ff]"
         >
           Continue
         </Button>

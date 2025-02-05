@@ -1,13 +1,22 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, CreditCard, MessageSquare, Briefcase, Users, Settings, LogOut } from 'lucide-react';
+import {
+  Home,
+  CreditCard,
+  MessageSquare,
+  Briefcase,
+  Users,
+  Settings,
+  LogOut,
+  Loader2
+} from 'lucide-react';
 import { Logo } from '@/components/auth/logo';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -21,14 +30,23 @@ const navigation = [
 ];
 
 export function Sidebar() {
+  const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleSignOut = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
     try {
       await signOut(auth);
+      router.push('/');
+      router.refresh();
     } catch (error) {
       console.error('Error signing out:', error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -41,12 +59,10 @@ export function Sidebar() {
       </div>
 
       {user && (
-        <div className="flex items-center gap-4 p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-          <Avatar className="h-12 w-12 ring-2 ring-indigo-600/10">
-            <AvatarFallback className="text-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-              {user.displayName?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-4 p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#3659fb] to-[#6384ff] flex items-center justify-center text-white text-lg font-medium shadow-sm">
+            {user.displayName?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
+          </div>
           <div className="flex flex-col min-w-0">
             <span className="font-medium truncate text-gray-900">
               {user.displayName || user.email?.split('@')[0]}
@@ -67,8 +83,8 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all',
                 isActive 
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg' 
-                  : 'text-gray-600 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-600'
+                  ? 'bg-gradient-to-r from-[#3659fb] to-[#6384ff] text-white shadow-md hover:shadow-lg' 
+                  : 'text-gray-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[#3659fb]'
               )}
             >
               <Icon 
@@ -76,7 +92,7 @@ export function Sidebar() {
                   "h-5 w-5 transition-colors", 
                   isActive 
                     ? "text-white" 
-                    : "text-gray-400 group-hover:text-indigo-600"
+                    : "text-gray-400 group-hover:text-[#3659fb]"
                 )} 
               />
               {item.name}
@@ -85,14 +101,19 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
+      <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-gray-600 hover:text-indigo-600 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100"
+          className="w-full justify-start gap-3 text-gray-600 hover:text-[#3659fb] hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50"
           onClick={handleSignOut}
+          disabled={isLoggingOut}
         >
-          <LogOut className="h-5 w-5" />
-          Log Out
+          {isLoggingOut ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <LogOut className="h-5 w-5" />
+          )}
+          {isLoggingOut ? 'Signing out...' : 'Sign Out'}
         </Button>
       </div>
     </div>

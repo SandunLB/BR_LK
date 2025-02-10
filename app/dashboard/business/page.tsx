@@ -4,7 +4,13 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Stepper } from "@/components/business/stepper";
 import { CountrySelection } from "@/components/business/country-selection";
 import { PackageSelection } from "@/components/business/package-selection";
@@ -13,7 +19,20 @@ import { OwnerInformation } from "@/components/business/owner-information";
 import { AddressDetails } from "@/components/business/address-details";
 import { Review } from "@/components/business/review";
 import { Payment } from "@/components/business/payment";
-import { Building, Building2, Loader2, CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Users, MapPin, CreditCard, FileText } from "lucide-react";
+import {
+  Building,
+  Building2,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Users,
+  MapPin,
+  CreditCard,
+  FileText,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getBusinesses, deleteDocument } from "@/utils/firebase";
 
@@ -60,7 +79,9 @@ function BusinessContent() {
   const [formData, setFormData] = useState<FormData>({});
   const [existingBusinesses, setExistingBusinesses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedBusinessId, setExpandedBusinessId] = useState<string | null>(null);
+  const [expandedBusinessId, setExpandedBusinessId] = useState<string | null>(
+    null
+  );
   const { user } = useAuth();
 
   useEffect(() => {
@@ -98,7 +119,9 @@ function BusinessContent() {
         } else {
           if (savedStep) setCurrentStep(Number(savedStep));
           if (savedData) setFormData(JSON.parse(savedData));
-          setShowRegistration(registerParam === "true" || !!savedStep || !!savedData);
+          setShowRegistration(
+            registerParam === "true" || !!savedStep || !!savedData
+          );
         }
       }
       setIsLoading(false);
@@ -116,7 +139,10 @@ function BusinessContent() {
           newData.country = { name: stepData.name || "" };
           break;
         case 2:
-          newData.package = { name: stepData.name || "", price: stepData.price || 0 };
+          newData.package = {
+            name: stepData.name || "",
+            price: stepData.price || 0,
+          };
           break;
         case 3:
           newData.company = {
@@ -147,7 +173,10 @@ function BusinessContent() {
           break;
       }
 
-      sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
+      sessionStorage.setItem(
+        "businessRegistrationData",
+        JSON.stringify(newData)
+      );
       return newData;
     });
 
@@ -202,54 +231,31 @@ function BusinessContent() {
 
   const getCurrentStep = (documents: any) => {
     if (!documents) return 0;
-    const documentOrder = ['filedArticles', 'einTaxId', 'organizerStatement', 'boiReport'];
+    const documentOrder = [
+      "filedArticles",
+      "einTaxId",
+      "organizerStatement",
+      "boiReport",
+    ];
     let currentStep = 0;
-    
+
     documentOrder.forEach((doc, index) => {
       if (documents[doc]) {
         currentStep = index + 1;
       }
     });
-    
-    return currentStep;
-  };
 
-  const renderRegistrationStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <CountrySelection onNext={handleNext} initialData={formData.country} />;
-      case 2:
-        return <PackageSelection onNext={handleNext} onBack={handleBack} initialData={formData.package} />;
-      case 3:
-        return <CompanyDetails onNext={handleNext} onBack={handleBack} initialData={formData.company} country={formData.country?.name} />;
-      case 4:
-        return <OwnerInformation onNext={handleNext} onBack={handleBack} initialData={formData.owner} />;
-      case 5:
-        return <AddressDetails onNext={handleNext} onBack={handleBack} initialData={formData.address} />;
-      case 6:
-        return (
-          <Review
-            data={formData as Required<FormData>}
-            onNext={() => setCurrentStep(7)}
-            onBack={handleBack}
-            onEdit={handleEdit}
-          />
-        );
-      case 7:
-        return <Payment amount={formData.package?.price || 0} businessData={formData} />;
-      default:
-        return null;
-    }
+    return currentStep;
   };
 
   const renderBusinessCard = (business: any) => {
     const isExpanded = expandedBusinessId === business.id;
     const registrationStep = getCurrentStep(business.documents);
     const documentOrder = [
-      { key: 'filedArticles', name: 'Filed Articles' },
-      { key: 'einTaxId', name: 'EIN / Tax ID Number' },
-      { key: 'organizerStatement', name: 'Statement of the Organizer' },
-      { key: 'boiReport', name: 'BOI Report' }
+      { key: "filedArticles", name: "Filed Articles" },
+      { key: "einTaxId", name: "EIN / Tax ID Number" },
+      { key: "organizerStatement", name: "Statement of the Organizer" },
+      { key: "boiReport", name: "BOI Report" },
     ];
 
     return (
@@ -266,12 +272,14 @@ function BusinessContent() {
                 Registered in {business.country?.name}
               </p>
             </div>
-            <div className={`px-4 py-2 rounded-full ${
-              registrationStep === 4 
-                ? 'bg-green-100 text-green-800'
-                : 'bg-indigo-100 text-indigo-800'
-            }`}>
-              {registrationStep === 4 ? 'Completed' : 'In Progress'}
+            <div
+              className={`px-4 py-2 rounded-full ${
+                registrationStep === 4
+                  ? "bg-green-100 text-green-800"
+                  : "bg-indigo-100 text-indigo-800"
+              }`}
+            >
+              {registrationStep === 4 ? "Completed" : "In Progress"}
             </div>
           </div>
 
@@ -296,16 +304,19 @@ function BusinessContent() {
           {/* Document Status */}
           <div className="space-y-4">
             {documentOrder.map((doc, index) => {
-              const isCompleted = business.documents && business.documents[doc.key];
+              const isCompleted =
+                business.documents && business.documents[doc.key];
               const isCurrent = index === registrationStep;
-              
+
               return (
-                <div 
+                <div
                   key={doc.key}
                   className={`flex items-center p-4 rounded-lg border ${
-                    isCompleted ? 'bg-green-50 border-green-200' :
-                    isCurrent ? 'bg-indigo-50 border-indigo-200' :
-                    'bg-gray-50 border-gray-200'
+                    isCompleted
+                      ? "bg-green-50 border-green-200"
+                      : isCurrent
+                      ? "bg-indigo-50 border-indigo-200"
+                      : "bg-gray-50 border-gray-200"
                   }`}
                 >
                   <div className="flex-shrink-0 mr-4">
@@ -320,11 +331,15 @@ function BusinessContent() {
                   <div className="flex-grow">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`font-medium ${
-                          isCompleted ? 'text-green-800' :
-                          isCurrent ? 'text-indigo-800' :
-                          'text-gray-600'
-                        }`}>
+                        <p
+                          className={`font-medium ${
+                            isCompleted
+                              ? "text-green-800"
+                              : isCurrent
+                              ? "text-indigo-800"
+                              : "text-gray-600"
+                          }`}
+                        >
                           {doc.name}
                         </p>
                         {isCompleted && business.documents[doc.key].name && (
@@ -335,7 +350,7 @@ function BusinessContent() {
                         )}
                       </div>
                       {isCompleted && (
-                        <a 
+                        <a
                           href={business.documents[doc.key].url}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -354,10 +369,14 @@ function BusinessContent() {
           {/* Expandable Details Section */}
           <div className="border-t pt-4">
             <button
-              onClick={() => setExpandedBusinessId(isExpanded ? null : business.id)}
+              onClick={() =>
+                setExpandedBusinessId(isExpanded ? null : business.id)
+              }
               className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors duration-200"
             >
-              <span className="font-medium text-gray-700">Additional Details</span>
+              <span className="font-medium text-gray-700">
+                Additional Details
+              </span>
               {isExpanded ? (
                 <ChevronUp className="h-5 w-5 text-gray-500" />
               ) : (
@@ -376,7 +395,9 @@ function BusinessContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-gray-500 text-sm">Industry</p>
-                      <p className="font-medium">{business.company?.industry}</p>
+                      <p className="font-medium">
+                        {business.company?.industry}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm">Package</p>
@@ -393,7 +414,10 @@ function BusinessContent() {
                   </h3>
                   <div className="space-y-3">
                     {business?.owner?.map((owner: Owner) => (
-                      <div key={owner.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div
+                        key={owner.id}
+                        className="flex items-center justify-between p-2 bg-white rounded border"
+                      >
                         <div>
                           <p className="font-medium">{owner.fullName}</p>
                           <p className="text-sm text-gray-500">
@@ -417,8 +441,13 @@ function BusinessContent() {
                   </h3>
                   <div className="space-y-2">
                     <p>{business?.address?.street}</p>
-                    <p>{business?.address?.city}, {business?.address?.state}</p>
-                    <p>{business?.address?.postalCode}, {business?.address?.country}</p>
+                    <p>
+                      {business?.address?.city}, {business?.address?.state}
+                    </p>
+                    <p>
+                      {business?.address?.postalCode},{" "}
+                      {business?.address?.country}
+                    </p>
                   </div>
                 </div>
 
@@ -435,15 +464,21 @@ function BusinessContent() {
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm">Status</p>
-                      <p className="font-medium capitalize">{business?.paymentDetails?.status}</p>
+                      <p className="font-medium capitalize">
+                        {business?.paymentDetails?.status}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm">Payment Method</p>
-                      <p className="font-medium capitalize">{business?.paymentDetails?.paymentMethod}</p>
+                      <p className="font-medium capitalize">
+                        {business?.paymentDetails?.paymentMethod}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-sm">Currency</p>
-                      <p className="font-medium">{business?.paymentDetails?.currency?.toUpperCase()}</p>
+                      <p className="font-medium">
+                        {business?.paymentDetails?.currency?.toUpperCase()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -462,13 +497,15 @@ function BusinessContent() {
           <CardTitle className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
             Your Businesses
           </CardTitle>
-          <CardDescription className="text-md">Manage your registered business entities</CardDescription>
+          <CardDescription className="text-md">
+            Manage your registered business entities
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             {existingBusinesses.map((business) => renderBusinessCard(business))}
           </div>
-          
+
           <Button
             onClick={() => {
               sessionStorage.removeItem("businessRegistrationData");
@@ -484,6 +521,70 @@ function BusinessContent() {
       </Card>
     </div>
   );
+
+  const renderRegistrationStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <CountrySelection
+            onNext={handleNext}
+            initialData={formData.country}
+          />
+        );
+      case 2:
+        return (
+          <PackageSelection
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.package}
+            selectedCountry={formData.country?.name}
+          />
+        );
+      case 3:
+        return (
+          <CompanyDetails
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.company}
+            country={formData.country?.name}
+          />
+        );
+      case 4:
+        return (
+          <OwnerInformation
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.owner}
+          />
+        );
+      case 5:
+        return (
+          <AddressDetails
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.address}
+          />
+        );
+      case 6:
+        return (
+          <Review
+            data={formData as Required<FormData>}
+            onNext={() => setCurrentStep(7)}
+            onBack={handleBack}
+            onEdit={handleEdit}
+          />
+        );
+      case 7:
+        return (
+          <Payment
+            amount={formData.package?.price || 0}
+            businessData={formData}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -505,7 +606,9 @@ function BusinessContent() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
                   Business Registration
                 </h1>
-                <p className="text-gray-500 mt-2">Complete the following steps to register your business.</p>
+                <p className="text-gray-500 mt-2">
+                  Complete the following steps to register your business.
+                </p>
               </div>
               <Button
                 variant="outline"
@@ -529,7 +632,9 @@ function BusinessContent() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
                 Business Dashboard
               </h1>
-              <p className="text-gray-500 mt-2">Manage your registered businesses</p>
+              <p className="text-gray-500 mt-2">
+                Manage your registered businesses
+              </p>
             </div>
             {renderBusinessDashboard()}
           </>
@@ -541,7 +646,7 @@ function BusinessContent() {
 
 export default function BusinessPage() {
   return (
-    <Suspense 
+    <Suspense
       fallback={
         <DashboardLayout>
           <div className="flex items-center justify-center h-screen">

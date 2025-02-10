@@ -73,14 +73,32 @@ interface EditBusinessProps {
   onUpdate: (updatedBusiness: Business) => void;
 }
 
-const DOCUMENT_TYPES = {
-  filedArticles: 'Filed Articles',
-  einTaxId: 'EIN / Tax ID Number',
-  organizerStatement: 'Statement of the Organizer',
-  boiReport: 'BOI Report'
-} as const;
+const getRequiredDocuments = (country: string, packageName: string) => {
+  if (country === "United Kingdom") {
+    return {
+      businessRegistration: 'Business Registration'
+    };
+  }
 
-type DocumentKey = keyof typeof DOCUMENT_TYPES;
+  if (country === "United States") {
+    const docs = {
+      filedArticlesAndOrganizer: 'Filed Articles & Statement of the Organizer',
+      einTaxId: 'EIN / Tax ID Number',
+      boiReport: 'BOI Report'
+    };
+
+    if (packageName === "enterprise") {
+      return {
+        ...docs,
+        itinNumber: 'ITIN Number'
+      };
+    }
+
+    return docs;
+  }
+
+  return {};
+};
 
 function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +107,12 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
   const [uploadProgress, setUploadProgress] = useState<Record<string, boolean>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleFileSelect = (docKey: DocumentKey, file: File | null) => {
+  const DOCUMENT_TYPES = getRequiredDocuments(
+    business.country?.name || '',
+    business.package?.name || ''
+  );
+
+  const handleFileSelect = (docKey: string, file: File | null) => {
     if (file) {
       setDocuments(prev => ({
         ...prev,
@@ -98,7 +121,7 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
     }
   };
 
-  const removeDocument = (docKey: DocumentKey) => {
+  const removeDocument = (docKey: string) => {
     const newDocs = { ...documents };
     delete newDocs[docKey];
     setDocuments(newDocs);
@@ -128,7 +151,7 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
           body: formData
         });
 
-        if (!uploadResponse.ok) throw new Error(`Failed to upload ${DOCUMENT_TYPES[docKey as DocumentKey]}`);
+        if (!uploadResponse.ok) throw new Error(`Failed to upload ${DOCUMENT_TYPES[docKey]}`);
         
         const { url } = await uploadResponse.json();
         
@@ -191,7 +214,7 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
           <div>
             <h2 className="text-xl font-bold">Manage Documents</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Upload and manage business documentation
+              Upload and manage business documentation for {business.country?.name}
             </p>
           </div>
           <button 
@@ -219,11 +242,11 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <h3 className="font-medium mb-4 flex items-center">
-              <span>Upload Documents</span>
+              <span>Required Documents</span>
               {isLoading && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
             </h3>
             <div className="space-y-4">
-              {(Object.entries(DOCUMENT_TYPES) as [DocumentKey, string][]).map(([key, name]) => (
+              {Object.entries(DOCUMENT_TYPES).map(([key, name]) => (
                 <div key={key} className="p-4 border rounded-lg hover:border-blue-200 transition-colors">
                   <div className="flex-1">
                     <label className="block text-sm font-medium mb-2 text-gray-700">
@@ -275,7 +298,7 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
             <div className="pt-6 border-t">
               <h3 className="font-medium mb-4">Current Documents</h3>
               <div className="bg-gray-50 rounded-lg divide-y divide-gray-200">
-                {(Object.entries(DOCUMENT_TYPES) as [DocumentKey, string][]).map(([key, name]) => {
+                {Object.entries(DOCUMENT_TYPES).map(([key, name]) => {
                   const doc = business.documents?.[key];
                   if (!doc) return null;
                   
@@ -376,7 +399,6 @@ export default function BusinessesPage() {
       return 'N/A';
     }
   };
-  
 
   const handleBusinessUpdate = (updatedBusiness: Business) => {
     setBusinesses(prevBusinesses => 
@@ -384,7 +406,7 @@ export default function BusinessesPage() {
         b.id === updatedBusiness.id ? updatedBusiness : b
       )
     );
-    setSelectedBusinessForEdit(updatedBusiness);
+    setSelectedBusinessForEdit(null);
   };
 
   const handleOpenModal = (business: Business) => {
@@ -525,7 +547,7 @@ export default function BusinessesPage() {
               <div className="mt-6 pt-6 border-t">
                 <h3 className="font-semibold mb-4">Documents</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(Object.entries(DOCUMENT_TYPES) as [DocumentKey, string][]).map(([key, name]) => {
+                  {Object.entries(getRequiredDocuments(business.country?.name || '', business.package?.name || '')).map(([key, name]) => {
                     const doc = business.documents?.[key];
                     if (!doc) return null;
 
@@ -578,10 +600,10 @@ export default function BusinessesPage() {
               </div>
             )}
 
-          <div className="mt-6 pt-4 border-t text-sm text-gray-500">
-            <div>Created: {formatTimestamp(business.createdAt, business)}</div>
-            <div>Updated: {formatTimestamp(business.updatedAt)}</div>
-          </div>
+            <div className="mt-6 pt-4 border-t text-sm text-gray-500">
+              <div>Created: {formatTimestamp(business.createdAt, business)}</div>
+              <div>Updated: {formatTimestamp(business.updatedAt)}</div>
+            </div>
           </div>
         ))}
       </div>

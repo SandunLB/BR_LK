@@ -71,6 +71,33 @@ const steps = [
   { id: 7, name: "Payment", description: "Complete payment" },
 ];
 
+const getRequiredDocuments = (country: string, packageName: string) => {
+  if (country === "United Kingdom") {
+    return [
+      { key: "businessRegistration", name: "Business Registration" }
+    ];
+  }
+
+  const usDocuments = [
+    { key: "filedArticlesAndOrganizer", name: "Filed Articles & Statement of the Organizer" },
+    { key: "einTaxId", name: "EIN / Tax ID Number" },
+    { key: "boiReport", name: "BOI Report" }
+  ];
+
+  if (country === "United States" && packageName === "enterprise") {
+    return [
+      ...usDocuments,
+      { key: "itinNumber", name: "ITIN Number" }
+    ];
+  }
+
+  if (country === "United States") {
+    return usDocuments;
+  }
+
+  return [];
+};
+
 function BusinessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -229,34 +256,31 @@ function BusinessContent() {
     }
   };
 
-  const getCurrentStep = (documents: any) => {
-    if (!documents) return 0;
-    const documentOrder = [
-      "filedArticles",
-      "einTaxId",
-      "organizerStatement",
-      "boiReport",
-    ];
-    let currentStep = 0;
+  const getCurrentStep = (business: any) => {
+    if (!business.documents) return 0;
+    const requiredDocs = getRequiredDocuments(
+      business.country?.name || '',
+      business.package?.name || ''
+    );
+    let completedDocs = 0;
 
-    documentOrder.forEach((doc, index) => {
-      if (documents[doc]) {
-        currentStep = index + 1;
+    requiredDocs.forEach(doc => {
+      if (business.documents[doc.key]) {
+        completedDocs++;
       }
     });
 
-    return currentStep;
+    return completedDocs;
   };
 
   const renderBusinessCard = (business: any) => {
     const isExpanded = expandedBusinessId === business.id;
-    const registrationStep = getCurrentStep(business.documents);
-    const documentOrder = [
-      { key: "filedArticles", name: "Filed Articles" },
-      { key: "einTaxId", name: "EIN / Tax ID Number" },
-      { key: "organizerStatement", name: "Statement of the Organizer" },
-      { key: "boiReport", name: "BOI Report" },
-    ];
+    const requiredDocuments = getRequiredDocuments(
+      business.country?.name || '',
+      business.package?.name || ''
+    );
+    const registrationStep = getCurrentStep(business);
+    const totalSteps = requiredDocuments.length;
 
     return (
       <Card key={business.id} className="shadow-lg">
@@ -274,12 +298,12 @@ function BusinessContent() {
             </div>
             <div
               className={`px-4 py-2 rounded-full ${
-                registrationStep === 4
+                registrationStep === totalSteps
                   ? "bg-green-100 text-green-800"
                   : "bg-indigo-100 text-indigo-800"
               }`}
             >
-              {registrationStep === 4 ? "Completed" : "In Progress"}
+              {registrationStep === totalSteps ? "Completed" : "In Progress"}
             </div>
           </div>
 
@@ -290,22 +314,21 @@ function BusinessContent() {
                 Registration Progress
               </span>
               <span className="text-sm font-semibold text-[#3659fb]">
-                {Math.round((registrationStep / 4) * 100)}%
+                {totalSteps > 0 ? Math.round((registrationStep / totalSteps) * 100) : 0}%
               </span>
             </div>
             <div className="h-2 bg-indigo-100 rounded">
               <div
                 className="h-2 bg-[#3659fb] rounded transition-all duration-500"
-                style={{ width: `${(registrationStep / 4) * 100}%` }}
+                style={{ width: `${totalSteps > 0 ? (registrationStep / totalSteps) * 100 : 0}%` }}
               />
             </div>
           </div>
 
           {/* Document Status */}
           <div className="space-y-4">
-            {documentOrder.map((doc, index) => {
-              const isCompleted =
-                business.documents && business.documents[doc.key];
+            {requiredDocuments.map((doc, index) => {
+              const isCompleted = business.documents && business.documents[doc.key];
               const isCurrent = index === registrationStep;
 
               return (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Rocket, Plane, ScrollText } from "lucide-react";
+import { Check, Rocket, Plane, ScrollText, ArrowLeft } from "lucide-react";
 
 interface Feature {
   name: string;
@@ -29,7 +29,7 @@ const countryPackages: CountryPackages = {
   "United States": [
     {
       id: "basic",
-      name: "Paperplane",
+      name: "basic",
       price: 129,
       subtitle: "For the small",
       plan: "Basic",
@@ -47,7 +47,7 @@ const countryPackages: CountryPackages = {
     },
     {
       id: "growth",
-      name: "Plane",
+      name: "growth",
       price: 159,
       subtitle: "For startups",
       plan: "Growth",
@@ -67,7 +67,7 @@ const countryPackages: CountryPackages = {
     },
     {
       id: "enterprise",
-      name: "Rocket",
+      name: "enterprise",
       price: 599,
       subtitle: "For business",
       plan: "Enterprise",
@@ -89,7 +89,7 @@ const countryPackages: CountryPackages = {
   "United Kingdom": [
     {
       id: "basic",
-      name: "Paperplane",
+      name: "basic",
       price: 99,
       subtitle: "For the small",
       plan: "Basic",
@@ -104,7 +104,7 @@ const countryPackages: CountryPackages = {
     },
     {
       id: "growth",
-      name: "Plane",
+      name: "growth",
       price: 197,
       subtitle: "For startups",
       plan: "Growth",
@@ -121,7 +121,7 @@ const countryPackages: CountryPackages = {
     },
     {
       id: "enterprise",
-      name: "Rocket",
+      name: "enterprise",
       price: 207,
       subtitle: "For business",
       plan: "Enterprise",
@@ -153,14 +153,13 @@ export function PackageSelection({
   selectedCountry = "United States",
 }: PackageSelectionProps) {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [hoveredPackage, setHoveredPackage] = useState<string | null>(null);
 
-  // Get packages based on selected country
   const packages =
     selectedCountry === "United Kingdom"
       ? countryPackages["United Kingdom"]
       : countryPackages["United States"];
 
-  // Set initial package if provided
   useEffect(() => {
     if (initialData) {
       const pkg = packages.find((p) => p.name === initialData.name);
@@ -172,12 +171,12 @@ export function PackageSelection({
 
   const getPackageIcon = (name: string) => {
     switch (name.toLowerCase()) {
-      case "paperplane":
-        return <ScrollText className="h-6 w-6" />;
-      case "plane":
-        return <Plane className="h-6 w-6" />;
-      case "rocket":
-        return <Rocket className="h-6 w-6" />;
+      case "basic":
+        return <ScrollText className="h-6 w-6 text-indigo-600" />;
+      case "growth":
+        return <Plane className="h-6 w-6 text-indigo-600" />;
+      case "enterprise":
+        return <Rocket className="h-6 w-6 text-indigo-600" />;
       default:
         return null;
     }
@@ -191,7 +190,7 @@ export function PackageSelection({
         </h2>
         <p className="text-gray-500 mt-3">
           Choose a package that best suits your business needs in{" "}
-          {selectedCountry}
+          <span className="font-medium text-gray-700">{selectedCountry}</span>
         </p>
       </div>
 
@@ -199,16 +198,20 @@ export function PackageSelection({
         {packages.map((pkg) => (
           <Card
             key={pkg.id}
-            className={`relative cursor-pointer transition-all h-full ${
-              selectedPackage === pkg.id
-                ? "ring-2 ring-indigo-600 border-transparent"
-                : "hover:border-gray-300"
-            }`}
+            className={`relative cursor-pointer transition-colors h-full group 
+              ${
+                selectedPackage === pkg.id
+                  ? "ring-2 ring-indigo-600 border-transparent"
+                  : "hover:border-gray-300"
+              }
+            `}
             onClick={() => setSelectedPackage(pkg.id)}
+            onMouseEnter={() => setHoveredPackage(pkg.id)}
+            onMouseLeave={() => setHoveredPackage(null)}
           >
             {pkg.recommended && (
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <div className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] text-white px-4 py-1 rounded-full text-sm font-medium">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                <div className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] text-white px-4 py-1 rounded-full text-sm font-medium shadow-md">
                   Recommended
                 </div>
               </div>
@@ -216,44 +219,54 @@ export function PackageSelection({
 
             <CardHeader className="pb-4">
               <CardTitle className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {getPackageIcon(pkg.name)}
-                  <span className="text-2xl font-bold">{pkg.name}</span>
-                </div>
-                <div className="text-sm text-gray-500">{pkg.subtitle}</div>
-                <div className="text-lg font-medium text-indigo-600">
-                  {pkg.plan}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-indigo-50 rounded-lg">
+                    {getPackageIcon(pkg.name)}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold capitalize">
+                      {pkg.name}
+                    </h3>
+                    <p className="text-gray-500 text-sm mt-1">
+                      {pkg.subtitle}
+                    </p>
+                  </div>
                 </div>
               </CardTitle>
             </CardHeader>
 
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-indigo-600">
+            <CardContent className="space-y-6">
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-gray-900">
                     ${pkg.price}
                   </span>
                   {pkg.priceNote && (
-                    <span className="text-gray-500">{pkg.priceNote}</span>
+                    <span className="text-gray-500 text-sm">{pkg.priceNote}</span>
                   )}
                 </div>
+                {pkg.description && (
+                  <p className="text-gray-600 text-sm mt-2">{pkg.description}</p>
+                )}
+              </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="font-medium mb-4">What's included:</p>
-                  <ul className="space-y-3">
-                    {pkg.features.map((feature) => (
-                      <li
-                        key={feature.name}
-                        className="flex items-center gap-3"
-                      >
-                        <div className="bg-green-100 p-1 rounded-full flex-shrink-0">
-                          <Check className="h-4 w-4 text-green-600" />
-                        </div>
-                        <span className="text-sm">{feature.name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="font-medium mb-4 text-gray-900">What's included:</p>
+                <ul className="space-y-3">
+                  {pkg.features.map((feature) => (
+                    <li
+                      key={feature.name}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="bg-green-100 p-1 rounded-full flex-shrink-0">
+                        <Check className="h-4 w-4 text-green-600" />
+                      </div>
+                      <span className="text-sm text-gray-600">
+                        {feature.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </CardContent>
           </Card>
@@ -261,7 +274,12 @@ export function PackageSelection({
       </div>
 
       <div className="flex justify-center gap-4">
-        <Button variant="outline" onClick={onBack} className="px-8">
+        <Button 
+          variant="outline" 
+          onClick={onBack} 
+          className="px-8 flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
         <Button
@@ -270,7 +288,7 @@ export function PackageSelection({
             const selected = packages.find((p) => p.id === selectedPackage);
             if (selected) onNext(selected);
           }}
-          className="px-8 bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200"
+          className="px-8 bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors"
         >
           Continue
         </Button>

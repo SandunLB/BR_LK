@@ -73,7 +73,17 @@ interface EditBusinessProps {
   onUpdate: (updatedBusiness: Business) => void;
 }
 
-const getRequiredDocuments = (country: string, packageName: string) => {
+interface DocumentType {
+  key: string;
+  name: string;
+}
+
+interface DocumentTypes {
+  [key: string]: string;
+}
+
+
+const getRequiredDocuments = (country: string, packageName: string): DocumentTypes => {
   if (country === "United Kingdom") {
     return {
       businessRegistration: 'Business Registration'
@@ -81,7 +91,7 @@ const getRequiredDocuments = (country: string, packageName: string) => {
   }
 
   if (country === "United States") {
-    const docs = {
+    const docs: DocumentTypes = {
       filedArticlesAndOrganizer: 'Filed Articles & Statement of the Organizer',
       einTaxId: 'EIN / Tax ID Number',
       boiReport: 'BOI Report'
@@ -151,7 +161,11 @@ function EditBusiness({ business, onClose, onUpdate }: EditBusinessProps) {
           body: formData
         });
 
-        if (!uploadResponse.ok) throw new Error(`Failed to upload ${DOCUMENT_TYPES[docKey]}`);
+        // Now TypeScript knows that DOCUMENT_TYPES[docKey] is safe
+        if (!uploadResponse.ok) {
+          const docName = DOCUMENT_TYPES[docKey] || 'document';
+          throw new Error(`Failed to upload ${docName}`);
+        }
         
         const { url } = await uploadResponse.json();
         

@@ -22,7 +22,8 @@ import {
   AlertTriangle,
   Briefcase,
   ExternalLink,
-  ArrowDownRight
+  ArrowDownRight,
+  Loader2
 } from "lucide-react"
 import { getBusinesses } from "@/utils/firebase"
 import {
@@ -50,6 +51,7 @@ interface Business {
   };
   status: string;
   country: { name: string };
+  package?: { name: string; price: number };
   owner: Array<{
     fullName: string;
     ownership: string;
@@ -59,6 +61,62 @@ interface Business {
 }
 
 const COLORS = ['#4F46E5', '#7C3AED', '#2563EB', '#9333EA'];
+
+const getRequiredDocuments = (country: string, packageName: string) => {
+  if (country === "United Kingdom") {
+    return [
+      { key: "businessRegistration", name: "Business Registration" }
+    ];
+  }
+
+  const usDocuments = [
+    { key: "filedArticlesAndOrganizer", name: "Filed Articles & Statement of the Organizer" },
+    { key: "einTaxId", name: "EIN / Tax ID Number" },
+    { key: "boiReport", name: "BOI Report" }
+  ];
+
+  if (country === "United States" && packageName === "enterprise") {
+    return [
+      ...usDocuments,
+      { key: "itinNumber", name: "ITIN Number" }
+    ];
+  }
+
+  if (country === "United States") {
+    return usDocuments;
+  }
+
+  return [];
+};
+
+const isBusinessCompleted = (business: Business) => {
+  if (!business.documents) return false;
+  const requiredDocs = getRequiredDocuments(
+    business.country?.name || '',
+    business.package?.name || ''
+  );
+  return requiredDocs.every(doc => business.documents[doc.key]);
+};
+
+const getDocumentStatus = (business: Business) => {
+  if (!business.documents) return { count: 0, total: 0, text: 'No documents uploaded' };
+  
+  const requiredDocs = getRequiredDocuments(
+    business.country?.name || '',
+    business.package?.name || ''
+  );
+  
+  const uploadedCount = requiredDocs.filter(doc => business.documents[doc.key]).length;
+  const totalRequired = requiredDocs.length;
+  
+  return {
+    count: uploadedCount,
+    total: totalRequired,
+    text: uploadedCount === totalRequired 
+      ? 'All documents received' 
+      : `${uploadedCount}/${totalRequired} documents uploaded`
+  };
+};
 
 const formatTimestamp = (timestamp: any, business?: Business) => {
   if (!timestamp) return 'N/A';
@@ -81,16 +139,47 @@ const formatTimestamp = (timestamp: any, business?: Business) => {
   }
 };
 
-const isBusinessCompleted = (business: Business) => {
-  if (!business.documents) return false;
-  const requiredDocuments = ['filedArticles', 'einTaxId', 'organizerStatement', 'boiReport'];
-  return requiredDocuments.every(doc => business.documents[doc]);
-};
+const DocumentsDisplay = ({ business }: { business: Business }) => {
+  const requiredDocuments = getRequiredDocuments(
+    business.country?.name || '',
+    business.package?.name || ''
+  );
 
-const documentStatusText = (business: Business) => {
-  if (!business.documents) return { count: 0, text: 'No documents uploaded' };
-  const count = Object.keys(business.documents).length;
-  return { count, text: count === 4 ? 'All documents received' : `${count}/4 documents uploaded` };
+  return (
+    <div className="space-y-4">
+      {requiredDocuments.map((doc) => {
+        const document = business.documents?.[doc.key];
+        return (
+          <div key={doc.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              {document ? (
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+              ) : (
+                <Clock className="h-5 w-5 text-yellow-500" />
+              )}
+              <div>
+                <p className="font-medium">{doc.name}</p>
+                {document && (
+                  <p className="text-sm text-gray-500">{document.name}</p>
+                )}
+              </div>
+            </div>
+            {document && (
+              <a
+                href={document.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+              >
+                <span>View</span>
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 export default function DashboardPage() {
@@ -117,13 +206,11 @@ export default function DashboardPage() {
   }, [user])
 
   const metrics = useMemo(() => {
-    if (!businesses.length) return null
+    if (!businesses.length) return null;
 
-    const totalInvestment = businesses.reduce((sum, b) => sum + (b.paymentDetails?.amount || 0) / 100, 0)
-    const completedBusinesses = businesses.filter(isBusinessCompleted).length
-    const pendingBusinesses = businesses.length - completedBusinesses
-    const latestBusiness = businesses[businesses.length - 1]
-    const documentCount = latestBusiness?.documents ? Object.keys(latestBusiness.documents).length : 0
+    const totalInvestment = businesses.reduce((sum, b) => sum + (b.paymentDetails?.amount || 0) / 100, 0);
+    const completedBusinesses = businesses.filter(isBusinessCompleted).length;
+    const pendingBusinesses = businesses.length - completedBusinesses;
 
     const typeDistribution = businesses.reduce((acc: Record<string, number>, b) => {
       const type = b.company.type.toUpperCase();
@@ -137,46 +224,50 @@ export default function DashboardPage() {
       return acc;
     }, {});
 
-    const timelineData = businesses.map(b => ({
-      date: formatTimestamp(b.createdAt, b).split(',')[0],
-      count: 1,
-    })).reduce((acc: any[], curr) => {
-      const existing = acc.find(item => item.date === curr.date)
-      if (existing) {
-        existing.count += curr.count
-      } else {
-        acc.push(curr)
-      }
-      return acc
-    }, []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    const timelineData = businesses
+      .map(b => ({
+        date: formatTimestamp(b.createdAt, b).split(',')[0],
+        count: 1,
+      }))
+      .reduce((acc: any[], curr) => {
+        const existing = acc.find(item => item.date === curr.date)
+        if (existing) {
+          existing.count += curr.count
+        } else {
+          acc.push(curr)
+        }
+        return acc
+      }, [])
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    const monthlyInvestment = businesses.reduce((acc: any[], b) => {
-      const date = formatTimestamp(b.createdAt, b).split(',')[0];
-      const amount = b.paymentDetails?.amount ? b.paymentDetails.amount / 100 : 0;
-      const existing = acc.find(item => item.date === date);
-      if (existing) {
-        existing.amount += amount;
-      } else {
-        acc.push({ date, amount });
-      }
-      return acc;
-    }, []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const monthlyInvestment = businesses
+      .reduce((acc: any[], b) => {
+        const date = formatTimestamp(b.createdAt, b).split(',')[0];
+        const amount = b.paymentDetails?.amount ? b.paymentDetails.amount / 100 : 0;
+        const existing = acc.find(item => item.date === date);
+        if (existing) {
+          existing.amount += amount;
+        } else {
+          acc.push({ date, amount });
+        }
+        return acc;
+      }, [])
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return {
       totalInvestment,
       completedBusinesses,
       pendingBusinesses,
-      documentCount,
       typeDistribution,
       countryDistribution,
       timelineData,
       monthlyInvestment
-    }
-  }, [businesses])
+    };
+  }, [businesses]);
 
   const renderSingleBusinessDashboard = (business: Business) => {
     const isComplete = isBusinessCompleted(business);
-    const docStatus = documentStatusText(business);
+    const docStatus = getDocumentStatus(business);
 
     return (
       <div className="space-y-8">
@@ -220,7 +311,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Payment Status */}
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-500">Payment Status</p>
@@ -257,17 +347,11 @@ export default function DashboardPage() {
                   <FileText className="mr-2 h-4 w-4" />
                   View Documents
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                >
+                <Button variant="outline" className="w-full justify-start">
                   <CircleDollarSign className="mr-2 h-4 w-4" />
                   Payment History
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                >
+                <Button variant="outline" className="w-full justify-start">
                   <Users className="mr-2 h-4 w-4" />
                   Owner Details
                 </Button>
@@ -276,51 +360,13 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Documents Progress */}
         <Card className="border border-indigo-100">
           <CardHeader>
             <CardTitle className="text-lg font-medium">Registration Documents</CardTitle>
             <CardDescription>Track your document submission progress</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { key: 'filedArticles', name: 'Filed Articles' },
-                { key: 'einTaxId', name: 'EIN / Tax ID Number' },
-                { key: 'organizerStatement', name: 'Statement of the Organizer' },
-                { key: 'boiReport', name: 'BOI Report' }
-              ].map((doc) => {
-                const document = business.documents?.[doc.key];
-                return (
-                  <div key={doc.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {document ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <Clock className="h-5 w-5 text-yellow-500" />
-                      )}
-                      <div>
-                        <p className="font-medium">{doc.name}</p>
-                        {document && (
-                          <p className="text-sm text-gray-500">{document.name}</p>
-                        )}
-                      </div>
-                    </div>
-                    {document && (
-                      <a
-                        href={document.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                      >
-                        <span>View</span>
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <DocumentsDisplay business={business} />
           </CardContent>
         </Card>
 
@@ -372,7 +418,6 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Key Metrics */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <Card className="border border-indigo-100 hover:shadow-md transition-all">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -431,7 +476,6 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            {/* Recent Businesses */}
             <Card className="border border-indigo-100">
               <CardHeader>
                 <CardTitle>Recent Registrations</CardTitle>
@@ -440,7 +484,7 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="space-y-4">
                   {businesses.slice(-3).reverse().map((business) => {
-                    const docStatus = documentStatusText(business);
+                    const docStatus = getDocumentStatus(business);
                     return (
                       <div key={business.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-4">
@@ -473,7 +517,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Investment Timeline */}
             <Card className="border border-indigo-100">
               <CardHeader>
                 <CardTitle>Investment Timeline</CardTitle>
@@ -521,6 +564,8 @@ export default function DashboardPage() {
           <TabsContent value="documents" className="space-y-6">
             {businesses.map((business) => {
               const isComplete = isBusinessCompleted(business);
+              const docStatus = getDocumentStatus(business);
+              
               return (
                 <Card key={business.id} className="border border-indigo-100">
                   <CardHeader>
@@ -533,48 +578,11 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <CardDescription>
-                      Registration started on {formatTimestamp(business.createdAt, business)}
+                      {docStatus.text} • Registration started on {formatTimestamp(business.createdAt, business)}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {[
-                        { key: 'filedArticles', name: 'Filed Articles' },
-                        { key: 'einTaxId', name: 'EIN / Tax ID Number' },
-                        { key: 'organizerStatement', name: 'Statement of the Organizer' },
-                        { key: 'boiReport', name: 'BOI Report' }
-                      ].map((doc) => {
-                        const document = business.documents?.[doc.key];
-                        return (
-                          <div key={doc.key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              {document ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <Clock className="h-5 w-5 text-yellow-500" />
-                              )}
-                              <div>
-                                <p className="font-medium">{doc.name}</p>
-                                {document && (
-                                  <p className="text-sm text-gray-500">{document.name}</p>
-                                )}
-                              </div>
-                            </div>
-                            {document && (
-                              <a
-                                href={document.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-2"
-                              >
-                                <span>View</span>
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <DocumentsDisplay business={business} />
                   </CardContent>
                 </Card>
               );
@@ -582,7 +590,6 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            {/* Distribution Charts */}
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="border border-indigo-100">
                 <CardHeader>
@@ -647,7 +654,6 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            {/* Registration Timeline */}
             <Card className="border border-indigo-100">
               <CardHeader>
                 <CardTitle>Registration Activity</CardTitle>
@@ -741,7 +747,7 @@ export default function DashboardPage() {
                     <div className="flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
                       <div>
-                        <p className="font-medium">Document Management</p>
+                      <p className="font-medium">Document Management</p>
                         <p className="text-sm text-gray-600">Secure storage and handling of all business documents</p>
                       </div>
                     </div>

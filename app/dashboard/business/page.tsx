@@ -63,6 +63,11 @@ interface FormData {
   };
 }
 
+interface BusinessDocument {
+  name: string;
+  url: string;
+}
+
 interface Business {
   id: string;
   path: string;
@@ -89,7 +94,7 @@ interface Business {
   };
   status: string;
   updatedAt: { seconds: number; nanoseconds: number };
-  documents?: Record<string, { name: string; url: string }>;
+  documents?: Record<string, BusinessDocument>;
 }
 
 // Helper function to check if state selection is needed
@@ -338,20 +343,15 @@ function BusinessContent() {
   };
 
   const getCurrentStep = (business: Business) => {
-    if (!business.documents) return 0;
+    const documents = business.documents || {};
     const requiredDocs = getRequiredDocuments(
       business.country?.name || '',
       business.package?.name || ''
     );
-    let completedDocs = 0;
-
-    requiredDocs.forEach(doc => {
-      if (business.documents[doc.key]) {
-        completedDocs++;
-      }
-    });
-
-    return completedDocs;
+    
+    return requiredDocs.reduce((count, doc) => {
+      return count + (documents[doc.key] ? 1 : 0);
+    }, 0);
   };
 
   const renderBusinessCard = (business: Business) => {
@@ -363,6 +363,7 @@ function BusinessContent() {
     const registrationStep = getCurrentStep(business);
     const totalSteps = requiredDocuments.length;
     const totalAmount = (business.state?.price || 0) + business.package.price;
+    const documents = business.documents || {};
 
     return (
       <Card key={business.id} className="shadow-lg">
@@ -411,7 +412,8 @@ function BusinessContent() {
           {/* Document Status */}
           <div className="space-y-4">
             {requiredDocuments.map((doc, index) => {
-              const isCompleted = business.documents && business.documents[doc.key];
+              const documentInfo = documents[doc.key];
+              const isCompleted = !!documentInfo;
               const isCurrent = index === registrationStep;
 
               return (
@@ -440,400 +442,400 @@ function BusinessContent() {
                         <p
                           className={`font-medium ${
                             isCompleted
-                              ? "text-green-800"
-                              : isCurrent
-                              ? "text-indigo-800"
-                              : "text-gray-600"
-                          }`}
-                        >
-                          {doc.name}
+                            ? "text-green-800"
+                            : isCurrent
+                            ? "text-indigo-800"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        {doc.name}
+                      </p>
+                      {documentInfo && documentInfo.name && (
+                        <p className="text-sm text-gray-500 flex items-center mt-1">
+                          <FileText className="h-4 w-4 mr-1" />
+                          {documentInfo.name}
                         </p>
-                        {isCompleted && business.documents[doc.key].name && (
-                          <p className="text-sm text-gray-500 flex items-center mt-1">
-                            <FileText className="h-4 w-4 mr-1" />
-                            {business.documents[doc.key].name}
-                          </p>
-                        )}
-                      </div>
-                      {isCompleted && business.documents[doc.key].url && (
-                        <a
-                          href={business.documents[doc.key].url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                        >
-                          View Document
-                        </a>
                       )}
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Expandable Details Section */}
-          <div className="border-t pt-4">
-            <button
-              onClick={() =>
-                setExpandedBusinessId(isExpanded ? null : business.id)
-              }
-              className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-            >
-              <span className="font-medium text-gray-700">
-                Additional Details
-              </span>
-              {isExpanded ? (
-                <ChevronUp className="h-5 w-5 text-gray-500" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-gray-500" />
-              )}
-            </button>
-
-            {isExpanded && (
-              <div className="mt-4 space-y-6">
-                {/* Company Details */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-gray-500" />
-                    Company Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-gray-500 text-sm">Industry</p>
-                      <p className="font-medium capitalize">
-                        {business.company?.industry}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-sm">Type</p>
-                      <p className="font-medium uppercase">
-                        {business.company?.type}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-sm">Package</p>
-                      <p className="font-medium capitalize">{business.package?.name}</p>
-                    </div>
-                    {business.state && (
-                      <div>
-                        <p className="text-gray-500 text-sm">State</p>
-                        <p className="font-medium">{business.state.name}</p>
-                      </div>
+                    {documentInfo?.url && (
+                      <a
+                        href={documentInfo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                      >
+                        View Document
+                      </a>
                     )}
                   </div>
                 </div>
+              </div>
+            );
+          })}
+        </div>
 
-                {/* Ownership Structure */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-gray-500" />
-                    Ownership Structure
-                  </h3>
-                  <div className="space-y-3">
-                    {business.owner.map((owner) => (
-                      <div
-                        key={owner.id}
-                        className="flex items-center justify-between p-2 bg-white rounded border"
-                      >
-                        <div>
-                          <p className="font-medium">{owner.fullName}</p>
-                          <p className="text-sm text-gray-500">
-                            {owner.isCEO ? "CEO • " : ""}
-                            {owner.birthDate && new Date(owner.birthDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
-                          {owner.ownership}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        {/* Expandable Details Section */}
+        <div className="border-t pt-4">
+          <button
+            onClick={() =>
+              setExpandedBusinessId(isExpanded ? null : business.id)
+            }
+            className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+          >
+            <span className="font-medium text-gray-700">
+              Additional Details
+            </span>
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-500" />
+            )}
+          </button>
 
-                {/* Address Details */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-gray-500" />
-                    Address Details
-                  </h3>
-                  <div className="space-y-2">
-                    <p>{business.address?.street}</p>
-                    <p>
-                      {business.address?.city}, {business.address?.state}
-                    </p>
-                    <p>
-                      {business.address?.postalCode}, {business.address?.country}
+          {isExpanded && (
+            <div className="mt-4 space-y-6">
+              {/* Company Details */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-gray-500" />
+                  Company Details
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-500 text-sm">Industry</p>
+                    <p className="font-medium capitalize">
+                      {business.company?.industry}
                     </p>
                   </div>
+                  <div>
+                    <p className="text-gray-500 text-sm">Type</p>
+                    <p className="font-medium uppercase">
+                      {business.company?.type}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-sm">Package</p>
+                    <p className="font-medium capitalize">{business.package?.name}</p>
+                  </div>
+                  {business.state && (
+                    <div>
+                      <p className="text-gray-500 text-sm">State</p>
+                      <p className="font-medium">{business.state.name}</p>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Payment Details */}
-                {business.paymentDetails && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-gray-500" />
-                      Payment Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Ownership Structure */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-gray-500" />
+                  Ownership Structure
+                </h3>
+                <div className="space-y-3">
+                  {business.owner.map((owner) => (
+                    <div
+                      key={owner.id}
+                      className="flex items-center justify-between p-2 bg-white rounded border"
+                    >
                       <div>
-                        <p className="text-gray-500 text-sm">Total Amount</p>
-                        <p className="font-medium">
-                          {formatCurrency(business.paymentDetails.amount / 100, business.paymentDetails.currency)}
+                        <p className="font-medium">{owner.fullName}</p>
+                        <p className="text-sm text-gray-500">
+                          {owner.isCEO ? "CEO • " : ""}
+                          {owner.birthDate && new Date(owner.birthDate).toLocaleDateString()}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">Status</p>
-                        <p className="font-medium capitalize">
-                          {business.paymentDetails.status}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">Payment Method</p>
-                        <p className="font-medium capitalize">
-                          {business.paymentDetails.paymentMethod}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-sm">Payment Date</p>
-                        <p className="font-medium">
-                          {formatDate(business.paymentDetails.createdAt)}
-                        </p>
-                      </div>
+                      <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
+                        {owner.ownership}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Address Details */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-gray-500" />
+                  Address Details
+                </h3>
+                <div className="space-y-2">
+                  <p>{business.address?.street}</p>
+                  <p>
+                    {business.address?.city}, {business.address?.state}
+                  </p>
+                  <p>
+                    {business.address?.postalCode}, {business.address?.country}
+                  </p>
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              {business.paymentDetails && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-gray-500" />
+                    Payment Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-500 text-sm">Total Amount</p>
+                      <p className="font-medium">
+                        {formatCurrency(business.paymentDetails.amount / 100, business.paymentDetails.currency)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Status</p>
+                      <p className="font-medium capitalize">
+                        {business.paymentDetails.status}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Payment Method</p>
+                      <p className="font-medium capitalize">
+                        {business.paymentDetails.paymentMethod}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Payment Date</p>
+                      <p className="font-medium">
+                        {formatDate(business.paymentDetails.createdAt)}
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const renderBusinessDashboard = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
-            Your Businesses
-          </CardTitle>
-          <CardDescription className="text-md">
-            Manage your registered business entities
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {existingBusinesses.map((business) => renderBusinessCard(business))}
-          </div>
-
-          <Button
-            onClick={() => {
-              sessionStorage.removeItem("businessRegistrationData");
-              sessionStorage.removeItem("businessRegistrationStep");
-              router.push("/dashboard/business?register=true");
-            }}
-            className="bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200 mt-6"
-          >
-            <Building className="mr-2 h-4 w-4" />
-            Register New Business
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderRegistrationStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <CountrySelection
-            onNext={handleNext}
-            initialData={formData.country}
-          />
-        );
-      case 2:
-        return (
-          <PackageSelection
-            onNext={handleNext}
-            onBack={handleBack}
-            initialData={formData.package}
-            selectedCountry={formData.country?.name}
-          />
-        );
-      case 3:
-        return (
-          <CompanyDetails
-            onNext={handleNext}
-            onBack={handleBack}
-            initialData={formData.company}
-            country={formData.country?.name}
-          />
-        );
-      case 4:
-        if (isStateSelectionRequired(formData.country?.name)) {
-          return (
-            <StateSelection
-              onNext={handleNext}
-              onBack={handleBack}
-              initialData={formData.state}
-            />
-          );
-        } else {
-          return (
-            <OwnerInformation
-              onNext={handleNext}
-              onBack={handleBack}
-              initialData={formData.owner}
-            />
-          );
-        }
-      case 5:
-        if (isStateSelectionRequired(formData.country?.name)) {
-          return (
-            <OwnerInformation
-              onNext={handleNext}
-              onBack={handleBack}
-              initialData={formData.owner}
-            />
-          );
-        } else {
-          return (
-            <AddressDetails
-              onNext={handleNext}
-              onBack={handleBack}
-              initialData={formData.address}
-            />
-          );
-        }
-      case 6:
-        if (isStateSelectionRequired(formData.country?.name)) {
-          return (
-            <AddressDetails
-              onNext={handleNext}
-              onBack={handleBack}
-              initialData={formData.address}
-            />
-          );
-        } else {
-          return (
-            <Review
-              data={{
-                ...formData as Required<FormData>,
-                totalPrice: calculateTotalPrice(formData)
-              }}
-              onNext={() => setCurrentStep(7)}
-              onBack={handleBack}
-              onEdit={handleEdit}
-            />
-          );
-        }
-      case 7:
-        if (isStateSelectionRequired(formData.country?.name)) {
-          return (
-            <Review
-              data={{
-                ...formData as Required<FormData>,
-                totalPrice: calculateTotalPrice(formData)
-              }}
-              onNext={() => setCurrentStep(8)}
-              onBack={handleBack}
-              onEdit={handleEdit}
-            />
-          );
-        } else {
-          return (
-            <Payment
-              amount={calculateTotalPrice(formData)}
-              businessData={formData}
-            />
-          );
-        }
-      case 8:
-        if (isStateSelectionRequired(formData.country?.name)) {
-          return (
-            <Payment
-              amount={calculateTotalPrice(formData)}
-              businessData={formData}
-            />
-          );
-        }
-        return null;
-      default:
-        return null;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </DashboardLayout>
-    );
-  }
+      </CardContent>
+    </Card>
+  );
+};
 
+const renderBusinessDashboard = () => (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
+          Your Businesses
+        </CardTitle>
+        <CardDescription className="text-md">
+          Manage your registered business entities
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {existingBusinesses.map((business) => renderBusinessCard(business))}
+        </div>
+
+        <Button
+          onClick={() => {
+            sessionStorage.removeItem("businessRegistrationData");
+            sessionStorage.removeItem("businessRegistrationStep");
+            router.push("/dashboard/business?register=true");
+          }}
+          className="bg-[#3659fb] hover:bg-[#4b6bff] text-white transition-colors duration-200 mt-6"
+        >
+          <Building className="mr-2 h-4 w-4" />
+          Register New Business
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const renderRegistrationStep = () => {
+  switch (currentStep) {
+    case 1:
+      return (
+        <CountrySelection
+          onNext={handleNext}
+          initialData={formData.country}
+        />
+      );
+    case 2:
+      return (
+        <PackageSelection
+          onNext={handleNext}
+          onBack={handleBack}
+          initialData={formData.package}
+          selectedCountry={formData.country?.name}
+        />
+      );
+    case 3:
+      return (
+        <CompanyDetails
+          onNext={handleNext}
+          onBack={handleBack}
+          initialData={formData.company}
+          country={formData.country?.name}
+        />
+      );
+    case 4:
+      if (isStateSelectionRequired(formData.country?.name)) {
+        return (
+          <StateSelection
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.state}
+          />
+        );
+      } else {
+        return (
+          <OwnerInformation
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.owner}
+          />
+        );
+      }
+    case 5:
+      if (isStateSelectionRequired(formData.country?.name)) {
+        return (
+          <OwnerInformation
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.owner}
+          />
+        );
+      } else {
+        return (
+          <AddressDetails
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.address}
+          />
+        );
+      }
+    case 6:
+      if (isStateSelectionRequired(formData.country?.name)) {
+        return (
+          <AddressDetails
+            onNext={handleNext}
+            onBack={handleBack}
+            initialData={formData.address}
+          />
+        );
+      } else {
+        return (
+          <Review
+            data={{
+              ...formData as Required<FormData>,
+              totalPrice: calculateTotalPrice(formData)
+            }}
+            onNext={() => setCurrentStep(7)}
+            onBack={handleBack}
+            onEdit={handleEdit}
+          />
+        );
+      }
+    case 7:
+      if (isStateSelectionRequired(formData.country?.name)) {
+        return (
+          <Review
+            data={{
+              ...formData as Required<FormData>,
+              totalPrice: calculateTotalPrice(formData)
+            }}
+            onNext={() => setCurrentStep(8)}
+            onBack={handleBack}
+            onEdit={handleEdit}
+          />
+        );
+      } else {
+        return (
+          <Payment
+            amount={calculateTotalPrice(formData)}
+            businessData={formData}
+          />
+        );
+      }
+    case 8:
+      if (isStateSelectionRequired(formData.country?.name)) {
+        return (
+          <Payment
+            amount={calculateTotalPrice(formData)}
+            businessData={formData}
+          />
+        );
+      }
+      return null;
+    default:
+      return null;
+  }
+};
+
+if (isLoading) {
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {showRegistration ? (
-          <>
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
-                  Business Registration
-                </h1>
-                <p className="text-gray-500 mt-2">
-                  Complete the following steps to register your business.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={handleCancelRegistration}
-                className="text-gray-600 hover:bg-gray-50"
-              >
-                Cancel Registration
-              </Button>
-            </div>
-
-            <Card>
-              <CardContent className="pt-6">
-                <Stepper steps={steps} currentStep={currentStep} />
-                <div className="mt-8">{renderRegistrationStep()}</div>
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
-                Business Dashboard
-              </h1>
-              <p className="text-gray-500 mt-2">
-                Manage your registered businesses
-              </p>
-            </div>
-            {renderBusinessDashboard()}
-          </>
-        )}
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
       </div>
     </DashboardLayout>
   );
 }
 
-export default function BusinessPage() {
-  return (
-    <Suspense
-      fallback={
-        <DashboardLayout>
-          <div className="flex items-center justify-center h-screen">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+return (
+  <DashboardLayout>
+    <div className="space-y-6">
+      {showRegistration ? (
+        <>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
+                Business Registration
+              </h1>
+              <p className="text-gray-500 mt-2">
+                Complete the following steps to register your business.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleCancelRegistration}
+              className="text-gray-600 hover:bg-gray-50"
+            >
+              Cancel Registration
+            </Button>
           </div>
-        </DashboardLayout>
-      }
-    >
-      <BusinessContent />
-    </Suspense>
-  );
+
+          <Card>
+            <CardContent className="pt-6">
+              <Stepper steps={steps} currentStep={currentStep} />
+              <div className="mt-8">{renderRegistrationStep()}</div>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#3659fb] to-[#6384ff] bg-clip-text text-transparent">
+              Business Dashboard
+            </h1>
+            <p className="text-gray-500 mt-2">
+              Manage your registered businesses
+            </p>
+          </div>
+          {renderBusinessDashboard()}
+        </>
+      )}
+    </div>
+  </DashboardLayout>
+);
+}
+
+export default function BusinessPage() {
+return (
+  <Suspense
+    fallback={
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        </div>
+      </DashboardLayout>
+    }
+  >
+    <BusinessContent />
+  </Suspense>
+);
 }

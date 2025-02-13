@@ -15,6 +15,7 @@ import { Stepper } from "@/components/business/stepper";
 import { CountrySelection } from "@/components/business/country-selection";
 import { PackageSelection } from "@/components/business/package-selection";
 import { CompanyDetails } from "@/components/business/company-details";
+import { StateSelection } from "@/components/business/state-selection";
 import { OwnerInformation } from "@/components/business/owner-information";
 import { AddressDetails } from "@/components/business/address-details";
 import { Review } from "@/components/business/review";
@@ -51,6 +52,7 @@ interface FormData {
   country?: { name: string };
   package?: { name: string; price: number };
   company?: { name: string; type: string; industry: string };
+  state?: { name: string; price: number };
   owner?: Owner[];
   address?: {
     street: string;
@@ -61,15 +63,65 @@ interface FormData {
   };
 }
 
-const steps = [
-  { id: 1, name: "Country", description: "Select country" },
-  { id: 2, name: "Package", description: "Choose package" },
-  { id: 3, name: "Company", description: "Company details" },
-  { id: 4, name: "Owner", description: "Owner information" },
-  { id: 5, name: "Address", description: "Address details" },
-  { id: 6, name: "Review", description: "Review details" },
-  { id: 7, name: "Payment", description: "Complete payment" },
-];
+interface Business {
+  id: string;
+  path: string;
+  country: { name: string };
+  package: { name: string; price: number };
+  company: { name: string; type: string; industry: string };
+  state?: { name: string; price: number };
+  owner: Owner[];
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  createdAt: any;
+  paymentDetails?: {
+    amount: number;
+    currency: string;
+    paymentMethod: string;
+    status: string;
+    stripePaymentIntentId: string;
+    createdAt: { seconds: number; nanoseconds: number };
+  };
+  status: string;
+  updatedAt: { seconds: number; nanoseconds: number };
+  documents?: Record<string, { name: string; url: string }>;
+}
+
+// Helper function to check if state selection is needed
+const isStateSelectionRequired = (country?: string) => {
+  return country === "United States";
+};
+
+// Dynamic steps based on country selection
+const getSteps = (country?: string) => {
+  const baseSteps = [
+    { id: 1, name: "Country", description: "Select country" },
+    { id: 2, name: "Package", description: "Choose package" },
+    { id: 3, name: "Company", description: "Company details" },
+  ];
+
+  const afterStateSteps = [
+    { id: 4, name: "Owner", description: "Owner information" },
+    { id: 5, name: "Address", description: "Address details" },
+    { id: 6, name: "Review", description: "Review details" },
+    { id: 7, name: "Payment", description: "Complete payment" },
+  ];
+
+  if (isStateSelectionRequired(country)) {
+    return [
+      ...baseSteps,
+      { id: 4, name: "State", description: "Select state" },
+      ...afterStateSteps.map(step => ({ ...step, id: step.id + 1 }))
+    ];
+  }
+
+  return [...baseSteps, ...afterStateSteps];
+};
 
 const getRequiredDocuments = (country: string, packageName: string) => {
   if (country === "United Kingdom") {
@@ -98,18 +150,40 @@ const getRequiredDocuments = (country: string, packageName: string) => {
   return [];
 };
 
+// Format timestamp to human readable date
+const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp.seconds * 1000);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Format currency with proper symbol and decimals
+const formatCurrency = (amount: number, currency: string = 'usd') => {
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: 2
+  });
+  return formatter.format(amount);
+};
+
 function BusinessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showRegistration, setShowRegistration] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({});
-  const [existingBusinesses, setExistingBusinesses] = useState<any[]>([]);
+  const [existingBusinesses, setExistingBusinesses] = useState<Business[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedBusinessId, setExpandedBusinessId] = useState<string | null>(
-    null
-  );
+  const [expandedBusinessId, setExpandedBusinessId] = useState<string | null>(null);
   const { user } = useAuth();
+  const steps = getSteps(formData.country?.name);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -157,6 +231,14 @@ function BusinessContent() {
     initializeData();
   }, [router, searchParams]);
 
+  const calculateTotalPrice = (data: FormData) => {
+    let total = data.package?.price || 0;
+    if (isStateSelectionRequired(data.country?.name) && data.state?.price) {
+      total += data.state.price;
+    }
+    return total;
+  };
+
   const handleNext = (stepData: any) => {
     setFormData((prev) => {
       const newData = { ...prev };
@@ -179,31 +261,30 @@ function BusinessContent() {
           };
           break;
         case 4:
-          newData.owner = stepData.map((owner: Owner) => ({
-            id: owner.id,
-            fullName: owner.fullName,
-            ownership: owner.ownership,
-            isCEO: owner.isCEO,
-            birthDate: owner.birthDate,
-            documentUrl: owner.documentUrl,
-            documentName: owner.documentName,
-          }));
+          if (isStateSelectionRequired(newData.country?.name)) {
+            newData.state = {
+              name: stepData.name || "",
+              price: stepData.price || 0,
+            };
+          } else {
+            newData.owner = stepData;
+          }
           break;
         case 5:
-          newData.address = {
-            street: stepData.street || "",
-            city: stepData.city || "",
-            state: stepData.state || "",
-            postalCode: stepData.postalCode || "",
-            country: stepData.country || "",
-          };
+          if (isStateSelectionRequired(newData.country?.name)) {
+            newData.owner = stepData;
+          } else {
+            newData.address = stepData;
+          }
+          break;
+        case 6:
+          if (isStateSelectionRequired(newData.country?.name)) {
+            newData.address = stepData;
+          }
           break;
       }
 
-      sessionStorage.setItem(
-        "businessRegistrationData",
-        JSON.stringify(newData)
-      );
+      sessionStorage.setItem("businessRegistrationData", JSON.stringify(newData));
       return newData;
     });
 
@@ -256,7 +337,7 @@ function BusinessContent() {
     }
   };
 
-  const getCurrentStep = (business: any) => {
+  const getCurrentStep = (business: Business) => {
     if (!business.documents) return 0;
     const requiredDocs = getRequiredDocuments(
       business.country?.name || '',
@@ -273,7 +354,7 @@ function BusinessContent() {
     return completedDocs;
   };
 
-  const renderBusinessCard = (business: any) => {
+  const renderBusinessCard = (business: Business) => {
     const isExpanded = expandedBusinessId === business.id;
     const requiredDocuments = getRequiredDocuments(
       business.country?.name || '',
@@ -281,6 +362,7 @@ function BusinessContent() {
     );
     const registrationStep = getCurrentStep(business);
     const totalSteps = requiredDocuments.length;
+    const totalAmount = (business.state?.price || 0) + business.package.price;
 
     return (
       <Card key={business.id} className="shadow-lg">
@@ -294,16 +376,17 @@ function BusinessContent() {
               </h3>
               <p className="text-gray-500 mt-1">
                 Registered in {business.country?.name}
+                {business.state && ` • ${business.state.name}`}
               </p>
             </div>
             <div
               className={`px-4 py-2 rounded-full ${
-                registrationStep === totalSteps
+                business.status === "completed"
                   ? "bg-green-100 text-green-800"
                   : "bg-indigo-100 text-indigo-800"
               }`}
             >
-              {registrationStep === totalSteps ? "Completed" : "In Progress"}
+              {business.status === "completed" ? "Active" : "In Progress"}
             </div>
           </div>
 
@@ -372,7 +455,7 @@ function BusinessContent() {
                           </p>
                         )}
                       </div>
-                      {isCompleted && (
+                      {isCompleted && business.documents[doc.key].url && (
                         <a
                           href={business.documents[doc.key].url}
                           target="_blank"
@@ -418,14 +501,26 @@ function BusinessContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-gray-500 text-sm">Industry</p>
-                      <p className="font-medium">
+                      <p className="font-medium capitalize">
                         {business.company?.industry}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500 text-sm">Package</p>
-                      <p className="font-medium">{business.package?.name}</p>
+                      <p className="text-gray-500 text-sm">Type</p>
+                      <p className="font-medium uppercase">
+                        {business.company?.type}
+                      </p>
                     </div>
+                    <div>
+                      <p className="text-gray-500 text-sm">Package</p>
+                      <p className="font-medium capitalize">{business.package?.name}</p>
+                    </div>
+                    {business.state && (
+                      <div>
+                        <p className="text-gray-500 text-sm">State</p>
+                        <p className="font-medium">{business.state.name}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -436,7 +531,7 @@ function BusinessContent() {
                     Ownership Structure
                   </h3>
                   <div className="space-y-3">
-                    {business?.owner?.map((owner: Owner) => (
+                    {business.owner.map((owner) => (
                       <div
                         key={owner.id}
                         className="flex items-center justify-between p-2 bg-white rounded border"
@@ -445,7 +540,7 @@ function BusinessContent() {
                           <p className="font-medium">{owner.fullName}</p>
                           <p className="text-sm text-gray-500">
                             {owner.isCEO ? "CEO • " : ""}
-                            {owner.birthDate}
+                            {owner.birthDate && new Date(owner.birthDate).toLocaleDateString()}
                           </p>
                         </div>
                         <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-sm">
@@ -463,48 +558,51 @@ function BusinessContent() {
                     Address Details
                   </h3>
                   <div className="space-y-2">
-                    <p>{business?.address?.street}</p>
+                    <p>{business.address?.street}</p>
                     <p>
-                      {business?.address?.city}, {business?.address?.state}
+                      {business.address?.city}, {business.address?.state}
                     </p>
                     <p>
-                      {business?.address?.postalCode},{" "}
-                      {business?.address?.country}
+                      {business.address?.postalCode}, {business.address?.country}
                     </p>
                   </div>
                 </div>
 
                 {/* Payment Details */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-gray-500" />
-                    Payment Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-gray-500 text-sm">Amount</p>
-                      <p className="font-medium">${business?.package?.price}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-sm">Status</p>
-                      <p className="font-medium capitalize">
-                        {business?.paymentDetails?.status}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-sm">Payment Method</p>
-                      <p className="font-medium capitalize">
-                        {business?.paymentDetails?.paymentMethod}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-sm">Currency</p>
-                      <p className="font-medium">
-                        {business?.paymentDetails?.currency?.toUpperCase()}
-                      </p>
+                {business.paymentDetails && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-gray-500" />
+                      Payment Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-gray-500 text-sm">Total Amount</p>
+                        <p className="font-medium">
+                          {formatCurrency(business.paymentDetails.amount / 100, business.paymentDetails.currency)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-sm">Status</p>
+                        <p className="font-medium capitalize">
+                          {business.paymentDetails.status}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-sm">Payment Method</p>
+                        <p className="font-medium capitalize">
+                          {business.paymentDetails.paymentMethod}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-sm">Payment Date</p>
+                        <p className="font-medium">
+                          {formatDate(business.paymentDetails.createdAt)}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -573,37 +671,94 @@ function BusinessContent() {
           />
         );
       case 4:
-        return (
-          <OwnerInformation
-            onNext={handleNext}
-            onBack={handleBack}
-            initialData={formData.owner}
-          />
-        );
+        if (isStateSelectionRequired(formData.country?.name)) {
+          return (
+            <StateSelection
+              onNext={handleNext}
+              onBack={handleBack}
+              initialData={formData.state}
+            />
+          );
+        } else {
+          return (
+            <OwnerInformation
+              onNext={handleNext}
+              onBack={handleBack}
+              initialData={formData.owner}
+            />
+          );
+        }
       case 5:
-        return (
-          <AddressDetails
-            onNext={handleNext}
-            onBack={handleBack}
-            initialData={formData.address}
-          />
-        );
+        if (isStateSelectionRequired(formData.country?.name)) {
+          return (
+            <OwnerInformation
+              onNext={handleNext}
+              onBack={handleBack}
+              initialData={formData.owner}
+            />
+          );
+        } else {
+          return (
+            <AddressDetails
+              onNext={handleNext}
+              onBack={handleBack}
+              initialData={formData.address}
+            />
+          );
+        }
       case 6:
-        return (
-          <Review
-            data={formData as Required<FormData>}
-            onNext={() => setCurrentStep(7)}
-            onBack={handleBack}
-            onEdit={handleEdit}
-          />
-        );
+        if (isStateSelectionRequired(formData.country?.name)) {
+          return (
+            <AddressDetails
+              onNext={handleNext}
+              onBack={handleBack}
+              initialData={formData.address}
+            />
+          );
+        } else {
+          return (
+            <Review
+              data={{
+                ...formData as Required<FormData>,
+                totalPrice: calculateTotalPrice(formData)
+              }}
+              onNext={() => setCurrentStep(7)}
+              onBack={handleBack}
+              onEdit={handleEdit}
+            />
+          );
+        }
       case 7:
-        return (
-          <Payment
-            amount={formData.package?.price || 0}
-            businessData={formData}
-          />
-        );
+        if (isStateSelectionRequired(formData.country?.name)) {
+          return (
+            <Review
+              data={{
+                ...formData as Required<FormData>,
+                totalPrice: calculateTotalPrice(formData)
+              }}
+              onNext={() => setCurrentStep(8)}
+              onBack={handleBack}
+              onEdit={handleEdit}
+            />
+          );
+        } else {
+          return (
+            <Payment
+              amount={calculateTotalPrice(formData)}
+              businessData={formData}
+            />
+          );
+        }
+      case 8:
+        if (isStateSelectionRequired(formData.country?.name)) {
+          return (
+            <Payment
+              amount={calculateTotalPrice(formData)}
+              businessData={formData}
+            />
+          );
+        }
+        return null;
       default:
         return null;
     }

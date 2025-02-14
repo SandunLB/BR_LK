@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SignInPage() {
@@ -20,6 +20,7 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   if (user) {
     router.push('/dashboard');
@@ -49,6 +50,7 @@ export default function SignInPage() {
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -57,6 +59,8 @@ export default function SignInPage() {
       const errorCode = error.code;
       const errorMessage = getErrorMessage(errorCode);
       setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -150,8 +154,12 @@ export default function SignInPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Button type="submit" className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors">
-              Sign in
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Sign in"}
             </Button>
           </motion.div>
         </form>

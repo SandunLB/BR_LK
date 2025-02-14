@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { parsePhoneNumberFromString, AsYouType, getExampleNumber, type CountryCode } from "libphonenumber-js/max"
 import examples from "libphonenumber-js/mobile/examples"
 import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
@@ -15,6 +15,7 @@ import { Loader2, EyeIcon, EyeOffIcon, ChevronDown } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { useState } from "react"
 
 interface Country {
   code: string
@@ -201,6 +202,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [countries, setCountries] = useState<Country[]>([])
   const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     fetchCountries()
@@ -270,9 +272,8 @@ export default function SignUpPage() {
       setCountries(sortedCountries)
 
       // Find Sri Lanka in the processed countries
-      const sriLanka = sortedCountries.find(country => 
-        country.countryCode === "LK" || 
-        country.name.toLowerCase() === "sri lanka"
+      const sriLanka = sortedCountries.find(
+        (country) => country.countryCode === "LK" || country.name.toLowerCase() === "sri lanka",
       )
 
       // Set Sri Lanka as default if found, otherwise use first country
@@ -307,9 +308,11 @@ export default function SignUpPage() {
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setIsLoading(true)
 
     if (phoneError) {
       setError("Please fix the errors before submitting")
+      setIsLoading(false)
       return
     }
 
@@ -336,6 +339,7 @@ export default function SignUpPage() {
       router.push("/dashboard")
     } catch (error: any) {
       setError(error.message)
+      setIsLoading(false)
     }
   }
 
@@ -449,8 +453,12 @@ export default function SignUpPage() {
           </motion.div>
 
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button type="submit" className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors">
-              Sign up
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Sign up"}
             </Button>
           </motion.div>
         </form>
@@ -501,3 +509,4 @@ export default function SignUpPage() {
     </AuthLayout>
   )
 }
+

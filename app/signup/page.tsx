@@ -1,38 +1,39 @@
-'use client';
+"use client"
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
-import { parsePhoneNumberFromString, AsYouType, getExampleNumber, CountryCode } from 'libphonenumber-js/max';
-import examples from 'libphonenumber-js/mobile/examples';
-import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { AuthLayout } from '@/components/auth/auth-layout';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Loader2, EyeIcon, EyeOffIcon, ChevronDown } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import Link from "next/link"
+import Image from "next/image"
+import { useState, useEffect, useRef } from "react"
+import { parsePhoneNumberFromString, AsYouType, getExampleNumber, type CountryCode } from "libphonenumber-js/max"
+import examples from "libphonenumber-js/mobile/examples"
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
+import { auth, db } from "@/lib/firebase"
+import { doc, setDoc } from "firebase/firestore"
+import { AuthLayout } from "@/components/auth/auth-layout"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Loader2, EyeIcon, EyeOffIcon, ChevronDown } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 
 interface Country {
-  code: string;
-  name: string;
-  flag: string;
-  countryCode: CountryCode;
-  example?: string;
-  format?: string;
+  code: string
+  name: string
+  flag: string
+  countryCode: CountryCode
+  example?: string
+  format?: string
+  uniqueKey: string
 }
 
 interface UnifiedPhoneInputProps {
-  value: string;
-  countryCode: string;
-  onChange: (phoneNumber: string) => void;
-  onCountryChange: (code: string) => void;
-  countries: Country[];
-  required?: boolean;
-  error?: string;
+  value: string
+  countryCode: string
+  onChange: (phoneNumber: string) => void
+  onCountryChange: (code: string) => void
+  countries: Country[]
+  required?: boolean
+  error?: string
 }
 
 const UnifiedPhoneInput = ({
@@ -42,61 +43,69 @@ const UnifiedPhoneInput = ({
   onCountryChange,
   countries,
   required,
-  error
+  error,
 }: UnifiedPhoneInputProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const [isFocused, setIsFocused] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const selectedCountry = countries.find(c => c.code === countryCode);
-  const asYouType = new AsYouType(selectedCountry?.countryCode || undefined);
+  const selectedCountry = countries.find((c) => c.code === countryCode)
+  const asYouType = new AsYouType(selectedCountry?.countryCode || undefined)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setIsFocused(false);
+        setIsOpen(false)
+        setIsFocused(false)
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = asYouType.input(e.target.value);
-    onChange(formatted);
-  };
+    const formatted = asYouType.input(e.target.value)
+    onChange(formatted)
+  }
 
-  const filteredCountries = countries.filter(country => 
-    country.name.toLowerCase().includes(search.toLowerCase()) ||
-    country.code.includes(search)
-  );
+  const filteredCountries = countries.filter(
+    (country) =>
+      country.name.toLowerCase().includes(search.toLowerCase()) ||
+      country.code.toLowerCase().includes(search.toLowerCase()) ||
+      country.countryCode.toLowerCase().includes(search.toLowerCase()),
+  )
 
   const handleContainerClick = () => {
     if (!isFocused) {
-      inputRef.current?.focus();
+      inputRef.current?.focus()
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setIsOpen(false);
+    if (e.key === "Escape") {
+      setIsOpen(false)
     }
-  };
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearch("")
+    }
+  }, [isOpen])
 
   return (
     <div className="space-y-1">
-      <div 
+      <div
         ref={containerRef}
         className={`
           relative flex rounded-md border transition-colors
-          ${isFocused ? 'ring-2 ring-offset-2 ring-ring ring-offset-background border-input' : 'border-input'}
-          ${error ? 'border-red-500' : ''}
-          ${isOpen ? 'z-50' : 'z-0'}
+          ${isFocused ? "ring-2 ring-offset-2 ring-ring ring-offset-background border-input" : "border-input"}
+          ${error ? "border-red-500" : ""}
+          ${isOpen ? "z-50" : "z-0"}
         `}
         onClick={handleContainerClick}
       >
@@ -106,7 +115,7 @@ const UnifiedPhoneInput = ({
         >
           {selectedCountry && (
             <Image
-              src={selectedCountry.flag}
+              src={selectedCountry.flag || "/placeholder.svg"}
               alt={`${selectedCountry.name} flag`}
               width={16}
               height={12}
@@ -149,18 +158,18 @@ const UnifiedPhoneInput = ({
             </div>
             {filteredCountries.map((country) => (
               <div
-                key={country.code}
+                key={country.uniqueKey}
                 className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                 onClick={() => {
-                  onCountryChange(country.code);
-                  onChange(''); // Clear phone number when country changes
-                  setIsOpen(false);
-                  setSearch('');
-                  inputRef.current?.focus();
+                  onCountryChange(country.code)
+                  onChange("")
+                  setIsOpen(false)
+                  setSearch("")
+                  inputRef.current?.focus()
                 }}
               >
                 <Image
-                  src={country.flag}
+                  src={country.flag || "/placeholder.svg"}
                   alt={`${country.name} flag`}
                   width={16}
                   height={12}
@@ -175,74 +184,74 @@ const UnifiedPhoneInput = ({
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
-  );
-};
+  )
+}
 
 export default function SignUpPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [countryCode, setCountryCode] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter()
+  const { user } = useAuth()
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [countryCode, setCountryCode] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [phoneError, setPhoneError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [countries, setCountries] = useState<Country[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchCountries();
-  }, []);
+    fetchCountries()
+  }, [])
 
   useEffect(() => {
-    validatePhoneNumber();
-  }, [phoneNumber, countryCode]);
+    validatePhoneNumber()
+  }, [phoneNumber, countryCode])
 
   const validatePhoneNumber = () => {
     if (!phoneNumber) {
-      setPhoneError('');
-      return;
+      setPhoneError("")
+      return
     }
 
-    const selectedCountry = countries.find(c => c.code === countryCode);
-    if (!selectedCountry) return;
+    const selectedCountry = countries.find((c) => c.code === countryCode)
+    if (!selectedCountry) return
 
-    const phoneNumberWithCountry = `${countryCode}${phoneNumber}`;
-    const parsedNumber = parsePhoneNumberFromString(phoneNumberWithCountry);
+    const phoneNumberWithCountry = `${countryCode}${phoneNumber}`
+    const parsedNumber = parsePhoneNumberFromString(phoneNumberWithCountry)
 
     if (!parsedNumber?.isValid()) {
-      setPhoneError('Please enter a valid phone number');
+      setPhoneError("Please enter a valid phone number")
     } else {
-      setPhoneError('');
+      setPhoneError("")
     }
-  };
+  }
 
   const fetchCountries = async () => {
     try {
-      const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flags,idd,cca2');
-      const data = await response.json();
-      
+      const response = await fetch("https://restcountries.com/v3.1/all?fields=name,flags,idd,cca2")
+      const data = await response.json()
+
       const processedCountries = await Promise.all(
         data
           .filter((country: any) => country.idd?.root)
           .map(async (country: any) => {
-            const countryCode = country.cca2 as CountryCode;
-            const dialCode = `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ''}`;
-            
-            let example = '';
-            let format = '';
-            
+            const countryCode = country.cca2 as CountryCode
+            const dialCode = `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`
+
+            let example = ""
+            let format = ""
+
             try {
-              const exampleNumber = getExampleNumber(countryCode, examples);
+              const exampleNumber = getExampleNumber(countryCode, examples)
               if (exampleNumber) {
-                example = exampleNumber.formatNational();
-                format = exampleNumber.formatNational();
+                example = exampleNumber.formatNational()
+                format = exampleNumber.formatNational()
               }
             } catch (error) {
-              console.error(`Error getting example for ${countryCode}:`, error);
+              console.error(`Error getting example for ${countryCode}:`, error)
             }
 
             return {
@@ -251,28 +260,38 @@ export default function SignUpPage() {
               flag: country.flags.svg,
               countryCode,
               example,
-              format
-            };
-          })
-      );
+              format,
+              uniqueKey: `${countryCode}-${dialCode}`,
+            }
+          }),
+      )
 
-      const sortedCountries = processedCountries.sort((a, b) => a.name.localeCompare(b.name));
-      setCountries(sortedCountries);
-      
-      if (sortedCountries.length > 0) {
-        setCountryCode(sortedCountries[0].code);
+      const sortedCountries = processedCountries.sort((a, b) => a.name.localeCompare(b.name))
+      setCountries(sortedCountries)
+
+      // Find Sri Lanka in the processed countries
+      const sriLanka = sortedCountries.find(country => 
+        country.countryCode === "LK" || 
+        country.name.toLowerCase() === "sri lanka"
+      )
+
+      // Set Sri Lanka as default if found, otherwise use first country
+      if (sriLanka) {
+        setCountryCode(sriLanka.code)
+      } else if (sortedCountries.length > 0) {
+        setCountryCode(sortedCountries[0].code)
       }
     } catch (error) {
-      console.error('Error fetching countries:', error);
-      setError('Failed to load country codes. Please try again.');
+      console.error("Error fetching countries:", error)
+      setError("Failed to load country codes. Please try again.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (user) {
-    router.push('/dashboard');
-    return null;
+    router.push("/dashboard")
+    return null
   }
 
   if (loading) {
@@ -282,61 +301,61 @@ export default function SignUpPage() {
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
       </AuthLayout>
-    );
+    )
   }
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError("")
 
     if (phoneError) {
-      setError('Please fix the errors before submitting');
-      return;
+      setError("Please fix the errors before submitting")
+      return
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
 
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`,
-      });
+      })
 
-      const phoneNumberWithCountry = `${countryCode}${phoneNumber}`;
-      const parsedNumber = parsePhoneNumberFromString(phoneNumberWithCountry);
-      const formattedPhone = parsedNumber?.format('E.164') || phoneNumberWithCountry;
+      const phoneNumberWithCountry = `${countryCode}${phoneNumber}`
+      const parsedNumber = parsePhoneNumberFromString(phoneNumberWithCountry)
+      const formattedPhone = parsedNumber?.format("E.164") || phoneNumberWithCountry
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         firstName,
         lastName,
         email,
         phone: formattedPhone,
         createdAt: new Date().toISOString(),
-      });
+      })
 
-      router.push('/dashboard');
+      router.push("/dashboard")
     } catch (error: any) {
-      setError(error.message);
+      setError(error.message)
     }
-  };
+  }
 
   const handleGoogleSignUp = async () => {
-    const provider = new GoogleAuthProvider();
+    const provider = new GoogleAuthProvider()
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         displayName: user.displayName,
         createdAt: new Date().toISOString(),
-      });
+      })
 
-      router.push('/dashboard');
+      router.push("/dashboard")
     } catch (error: any) {
-      setError(error.message);
+      setError(error.message)
     }
-  };
+  }
 
   return (
     <AuthLayout>
@@ -349,7 +368,7 @@ export default function SignUpPage() {
         <div className="space-y-3 text-center">
           <h2 className="text-4xl font-bold tracking-tight">Let's get started!</h2>
           <p className="text-lg text-gray-600">
-            Already have an account?{' '}
+            Already have an account?{" "}
             <Link href="/signin" className="text-[#3659fb] hover:text-[#2944c7] font-medium transition-colors">
               Sign in
             </Link>
@@ -357,7 +376,7 @@ export default function SignUpPage() {
         </div>
 
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-red-50 text-red-500 p-4 rounded-lg text-sm font-medium"
@@ -368,10 +387,7 @@ export default function SignUpPage() {
 
         <form onSubmit={handleEmailSignUp} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <motion.div
-              whileHover={{ scale: 1.00 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
+            <motion.div whileHover={{ scale: 1.0 }} transition={{ type: "spring", stiffness: 400 }}>
               <Input
                 placeholder="First Name"
                 value={firstName}
@@ -380,10 +396,7 @@ export default function SignUpPage() {
                 className="h-12 text-lg"
               />
             </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.00 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
+            <motion.div whileHover={{ scale: 1.0 }} transition={{ type: "spring", stiffness: 400 }}>
               <Input
                 placeholder="Last Name"
                 value={lastName}
@@ -394,10 +407,7 @@ export default function SignUpPage() {
             </motion.div>
           </div>
 
-          <motion.div
-            whileHover={{ scale: 1.00 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
+          <motion.div whileHover={{ scale: 1.0 }} transition={{ type: "spring", stiffness: 400 }}>
             <UnifiedPhoneInput
               value={phoneNumber}
               countryCode={countryCode}
@@ -409,10 +419,7 @@ export default function SignUpPage() {
             />
           </motion.div>
 
-          <motion.div
-            whileHover={{ scale: 1.00 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
+          <motion.div whileHover={{ scale: 1.0 }} transition={{ type: "spring", stiffness: 400 }}>
             <Input
               type="email"
               placeholder="Email"
@@ -423,11 +430,7 @@ export default function SignUpPage() {
             />
           </motion.div>
 
-          <motion.div
-            whileHover={{ scale: 1.00 }}
-            transition={{ type: "spring", stiffness: 400 }}
-            className="relative"
-          >
+          <motion.div whileHover={{ scale: 1.0 }} transition={{ type: "spring", stiffness: 400 }} className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
@@ -445,10 +448,7 @@ export default function SignUpPage() {
             </button>
           </motion.div>
 
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button type="submit" className="w-full h-12 text-lg bg-[#3659fb] hover:bg-[#4b6bff] transition-colors">
               Sign up
             </Button>
@@ -464,10 +464,7 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             type="button"
             onClick={handleGoogleSignUp}
@@ -497,17 +494,10 @@ export default function SignUpPage() {
           </Button>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="space-y-4"
-        >
-          <p className="text-center text-sm text-gray-500">
-            Copyright © 2025 BR.LK
-          </p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="space-y-4">
+          <p className="text-center text-sm text-gray-500">Copyright © 2025 BR.LK</p>
         </motion.div>
       </motion.div>
     </AuthLayout>
-  );
+  )
 }
